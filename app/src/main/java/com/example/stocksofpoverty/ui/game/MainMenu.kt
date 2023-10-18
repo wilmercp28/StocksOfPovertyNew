@@ -5,11 +5,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.data.getInitialDate
+import com.example.stocksofpoverty.data.getInitialPlayer
 import com.example.stocksofpoverty.data.getInitialStockList
+import java.text.DecimalFormat
 
 @Composable
 fun MainMenu(dataStore: DataStore<Preferences>) {
     val stocks = remember { mutableStateOf(getInitialStockList()) }
+    val player = remember { mutableStateOf(getInitialPlayer()) }
+    val date = remember { mutableStateOf(getInitialDate()) }
+    val format = DecimalFormat("#.##")
 
-    StockMarketGame(stocks,dataStore)
+    StockMarketGame(stocks,dataStore,player,date,format)
 }
