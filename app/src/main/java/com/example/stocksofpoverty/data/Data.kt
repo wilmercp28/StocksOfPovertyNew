@@ -8,10 +8,10 @@ data class Stock(
     val name: String,
     val symbol: String,
     val price: MutableState<Double>,
-    val demand: Int,
-    val supply: Int,
+    var demand: Double,
+    var supply: Double,
     val shares: MutableState<Int>,
-    val averageBuyPrice: MutableState<Int>
+    val averageBuyPrice: MutableState<Double>
 )
 
 fun getInitialStockList(
@@ -23,8 +23,8 @@ fun getInitialStockList(
         val name = stock.substringBefore(":")
         val abbreviation = stock.substringAfter(":")
         val randomPrice = Random.nextDouble(100.0, 1000.0)
-        val randomSupply = Random.nextInt(100) + 100
-        val randomDemand = Random.nextInt(100) + 100
+        val randomSupply = Random.nextDouble(100.00) + 100
+        val randomDemand = Random.nextDouble(100.00) + 100
 
         val stock =
             Stock(
@@ -34,7 +34,7 @@ fun getInitialStockList(
                 randomDemand,
                 randomSupply,
                 mutableStateOf(5),
-                mutableStateOf(0)
+                mutableStateOf(0.0)
             )
         listOfStocks += stock
     }

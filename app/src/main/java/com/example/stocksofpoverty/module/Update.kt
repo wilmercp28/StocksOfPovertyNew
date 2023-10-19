@@ -5,7 +5,6 @@ import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 
@@ -15,18 +14,39 @@ fun update(
     player: MutableState<Player>
 ) {
     updateStockPrice(stocks)
-
+    updateDate(date)
 }
 
 fun updateStockPrice(stocks: MutableState<List<Stock>>) {
-    val scale = 0.1
+    val priceSensitivity = 0.01
+    val supplySensitivity = 0.5
     for (stock in stocks.value) {
         val supplyDemandDif = stock.demand - stock.supply
-        val randomPriceIncrease = Random.nextDouble(abs(supplyDemandDif).toDouble()) * scale
+        val randomPriceIncrease = Random.nextDouble() * supplyDemandDif
+        val randomFluctuations = (Random.nextDouble() * 0.4) - 0.2
         if (supplyDemandDif > 0) {
-            stock.price.value += randomPriceIncrease
-        } else {
-            stock.price.value -= randomPriceIncrease
+            stock.price.value += randomPriceIncrease * priceSensitivity + randomFluctuations
+            stock.supply += randomPriceIncrease * supplySensitivity + randomFluctuations
+        } else if (supplyDemandDif < 0) {
+            stock.price.value -= abs(randomPriceIncrease * priceSensitivity) + randomFluctuations
+            stock.supply -= abs(randomPriceIncrease * supplySensitivity) + randomFluctuations
         }
     }
 }
+
+fun updateDate(date: MutableState<Date>) {
+    date.value.day.value++
+    if (date.value.day.value > 30){
+        date.value.day.value = 1
+        date.value.month.value++
+        if (date.value.month.value > 12){
+            date.value.month.value = 1
+            date.value.year.value++
+        }
+    }
+}
+
+
+
+
+

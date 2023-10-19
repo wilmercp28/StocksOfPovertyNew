@@ -16,6 +16,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val player = remember { mutableStateOf(getInitialPlayer()) }
     val date = remember { mutableStateOf(getInitialDate()) }
     val format = DecimalFormat("#.##")
+    val devMode = true
+    val saveSlot = remember { mutableStateOf(0) }
 
-    StockMarketGame(stocks,dataStore,player,date,format)
+    StockMarketGame(stocks,dataStore,player,date,format,devMode,saveSlot)
 }

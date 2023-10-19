@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,9 +43,14 @@ import androidx.datastore.preferences.core.Preferences
 import com.example.stocksofpoverty.R
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Player
+import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.module.Update
+import com.example.stocksofpoverty.module.buyStock
+import com.example.stocksofpoverty.module.getProfitLosses
+import com.example.stocksofpoverty.module.saveGame
 import com.example.stocksofpoverty.module.update
+import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,12 +60,24 @@ fun StockMarketGame(
     dataStore: DataStore<Preferences>,
     player: MutableState<Player>,
     date: MutableState<Date>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    devMode: Boolean,
+    saveSlot: MutableState<Int>
 ) {
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
+    val coroutine = rememberCoroutineScope()
     Update(paused) {
-        update(stocks,date,player)
+        update(stocks, date, player)
+        if (date.value.day.value == 1 && date.value.month.value == 1) {
+            coroutine.launch {
+                saveGame(
+                    SaveGame(stocks.value.toList()),
+                    dataStore,
+                    saveSlot.value
+                )
+            }
+        }
     }
     Scaffold(
         topBar = {
@@ -98,14 +116,14 @@ fun StockMarketGame(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Stocks(stocks, player)
+            Stocks(stocks, player, devMode)
         }
         AnimatedVisibility(
             selectedScreen.value == "Player",
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Stocks(stocks, player)
+            Stocks(stocks, player, devMode)
         }
 
     }
@@ -129,7 +147,7 @@ fun TopScreenIcons(iconName: String, selectedScreen: MutableState<String>, Icon:
 
 
 @Composable
-fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>) {
+fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>, devMode: Boolean) {
     LazyColumn {
         items(stocks.value) { stock ->
             Box(
@@ -138,7 +156,7 @@ fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>) {
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                ShowStock(stock)
+                ShowStock(stock, devMode, player)
             }
         }
     }
@@ -146,7 +164,7 @@ fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>) {
 }
 
 @Composable
-fun ShowStock(stock: Stock) {
+fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
     val priceBoxColor = remember { mutableStateOf(Color.Green) }
@@ -177,6 +195,12 @@ fun ShowStock(stock: Stock) {
         if (stock.shares.value > 0) {
             Text(text = "${stock.shares.value} Shares at avg price of ${stock.averageBuyPrice.value}")
         }
+        if (devMode) {
+            Text(text = "Demand ${format.format(stock.demand)} Supply ${format.format(stock.supply)}")
+            Button(onClick = { stock.demand += 100 }) {
+                Text(text = "increase Demand")
+            }
+        }
         AnimatedVisibility(expanded.value) {
             Column(
                 modifier = Modifier
@@ -203,10 +227,10 @@ fun ShowStock(stock: Stock) {
                     }
                 }
                 AnimatedVisibility(buying.value) {
-                    buyingAndSelling("Buy", sharesCount, buying, stock)
+                    buyingAndSelling("Buy", sharesCount, buying, stock, player)
                 }
                 AnimatedVisibility(selling.value) {
-                    buyingAndSelling("Sell", sharesCount, selling, stock)
+                    buyingAndSelling("Sell", sharesCount, selling, stock, player)
                 }
             }
         }
@@ -218,37 +242,55 @@ fun buyingAndSelling(
     label: String,
     shareCount: MutableState<Int>,
     isBuyingOrSelling: MutableState<Boolean>,
-    stock: Stock
+    stock: Stock,
+    player: MutableState<Player>
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(onClick = { isBuyingOrSelling.value = false }) {
-            Text(text = "Cancel")
-        }
-        IconButton(onClick = {
-            if (shareCount.value != 0) {
-                shareCount.value--
+    var profitLosses = remember { mutableStateOf(0.0) }
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = { isBuyingOrSelling.value = false }) {
+                Text(text = "Cancel")
             }
-        }) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares--")
-        }
-        Text(text = shareCount.value.toString())
-        IconButton(onClick = {
-            if (label == "Sell" && shareCount.value < stock.shares.value) {
-                shareCount.value++
-            } else if (label == "Buy") {
-                shareCount.value++
+            IconButton(onClick = {
+                if (shareCount.value != 0) {
+                    shareCount.value--
+                    profitLosses.value = getProfitLosses(shareCount,stock)
+                }
+            }) {
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares--")
             }
-        }) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares++")
-        }
-        Button(onClick = {
+            Text(text = shareCount.value.toString())
+            IconButton(onClick = {
+                if (label == "Sell" && shareCount.value < stock.shares.value) {
+                    shareCount.value++
+                    profitLosses.value = getProfitLosses(shareCount,stock)
+                } else if (label == "Buy") {
+                    shareCount.value++
+                }
+            }) {
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares++")
+            }
+            Button(onClick = {
+                if (label == "Buy") {
+                    buyStock(stock, shareCount, player)
+                }
 
-        }) {
-            Text(text = label)
+            }) {
+                Text(text = label)
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Profit / Losses ")
+            Text(text = profitLosses.value.toString())
+            
         }
     }
 }
