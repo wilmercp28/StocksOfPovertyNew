@@ -31,6 +31,8 @@ fun sellStock(stock: Stock, shareCount: MutableState<Int>, player: MutableState<
 }
 
 fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock): Double {
-    val totalIfSellOut = stock.shares.value * stock.price.value
-    return totalIfSellOut / shareCount.value
+    val totalInvested = shareCount.value * stock.averageBuyPrice.value
+    val totalIfSellOut = shareCount.value * stock.price.value
+    val difference = totalIfSellOut - totalInvested
+    return difference * shareCount.value
 }

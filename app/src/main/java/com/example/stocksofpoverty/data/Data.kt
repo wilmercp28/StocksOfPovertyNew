@@ -41,7 +41,10 @@ fun getInitialStockList(
     return listOfStocks
 }
 data class SaveGame(
-    val stock: List<Stock>
+    val saveSlot: Int,
+    val stock: List<Stock>,
+    val player: Player,
+    val date: Date
 )
 data class Date(
     val day: MutableState<Int>,

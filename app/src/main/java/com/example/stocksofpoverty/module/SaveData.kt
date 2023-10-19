@@ -1,15 +1,12 @@
 package com.example.stocksofpoverty.module
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.example.stocksofpoverty.data.SaveGame
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -40,6 +37,7 @@ suspend fun saveGame(
     dataStore.edit { preferences ->
         preferences[key] = jsonString
     }
+    Log.d("GameSaved", "Savegame, Slot $saveGameName")
 }
 suspend fun getSaveGame(
     dataStore: DataStore<Preferences>,
@@ -52,6 +50,16 @@ suspend fun getSaveGame(
     } else {
         null
     }
+}
+suspend fun getAllSaveGames(dataStore: DataStore<Preferences>): List<SaveGame> {
+    val saveGames = mutableListOf<SaveGame>()
+    for (slot in 0 until 20) {
+        val saveGame = getSaveGame(dataStore, slot)
+        if (saveGame != null) {
+            saveGames.add(saveGame)
+        }
+    }
+    return saveGames
 }
 class MutableStateDoubleDeserializer : JsonDeserializer<MutableState<Double>> {
     override fun deserialize(
@@ -99,5 +107,15 @@ class MutableStateIntSerializer : JsonSerializer<MutableState<Int>> {
     ): JsonElement {
         return JsonPrimitive(src?.value ?: 0)
     }
+}
+
+suspend fun getEmptySaveSlot(dataStore: DataStore<Preferences>): Int {
+    for (slot in 0 until 20) {
+        val saveGame = getSaveGame(dataStore, slot)
+        if (saveGame == null) {
+            return slot
+        }
+    }
+    return -1
 }
 

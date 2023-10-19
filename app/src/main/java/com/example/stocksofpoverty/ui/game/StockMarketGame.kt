@@ -1,6 +1,7 @@
 package com.example.stocksofpoverty.ui.game
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -52,6 +53,7 @@ import com.example.stocksofpoverty.module.saveGame
 import com.example.stocksofpoverty.module.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +74,11 @@ fun StockMarketGame(
         if (date.value.day.value == 1 && date.value.month.value == 1) {
             coroutine.launch {
                 saveGame(
-                    SaveGame(stocks.value.toList()),
+                    SaveGame(saveSlot.value,
+                        stocks.value.toList(),
+                        player.value,
+                        date.value
+                    ),
                     dataStore,
                     saveSlot.value
                 )
@@ -227,10 +233,10 @@ fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
                     }
                 }
                 AnimatedVisibility(buying.value) {
-                    buyingAndSelling("Buy", sharesCount, buying, stock, player)
+                    buyingAndSelling("Buy", sharesCount, buying, stock, player, format)
                 }
                 AnimatedVisibility(selling.value) {
-                    buyingAndSelling("Sell", sharesCount, selling, stock, player)
+                    buyingAndSelling("Sell", sharesCount, selling, stock, player, format)
                 }
             }
         }
@@ -243,9 +249,18 @@ fun buyingAndSelling(
     shareCount: MutableState<Int>,
     isBuyingOrSelling: MutableState<Boolean>,
     stock: Stock,
-    player: MutableState<Player>
+    player: MutableState<Player>,
+    format: DecimalFormat
 ) {
-    var profitLosses = remember { mutableStateOf(0.0) }
+    var profitLosses = remember(stock.price.value, shareCount.value) {
+        format.format(
+            getProfitLosses(
+                shareCount,
+                stock
+            )
+        ).toDouble()
+    }
+    val isLosingMoney = remember(profitLosses) { profitLosses < 0 }
     Column {
         Row(
             modifier = Modifier
@@ -258,7 +273,6 @@ fun buyingAndSelling(
             IconButton(onClick = {
                 if (shareCount.value != 0) {
                     shareCount.value--
-                    profitLosses.value = getProfitLosses(shareCount,stock)
                 }
             }) {
                 Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares--")
@@ -267,7 +281,6 @@ fun buyingAndSelling(
             IconButton(onClick = {
                 if (label == "Sell" && shareCount.value < stock.shares.value) {
                     shareCount.value++
-                    profitLosses.value = getProfitLosses(shareCount,stock)
                 } else if (label == "Buy") {
                     shareCount.value++
                 }
@@ -285,12 +298,19 @@ fun buyingAndSelling(
         }
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .animateContentSize(),
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(text = "Profit / Losses ")
-            Text(text = profitLosses.value.toString())
-            
+            if (shareCount.value != 0 && label == "Sell") {
+                Text(
+                    text = if (isLosingMoney) "Losing " else "Gaining ",
+                    color = if (isLosingMoney) Color.Red else Color.Green
+                )
+                Text(text = "${abs(profitLosses)}")
+            } else if (shareCount.value != 0 && label == "Buy") {
+                Text(text = "Total Price ${format.format(stock.price.value * shareCount.value)}")
+            }
         }
     }
 }
