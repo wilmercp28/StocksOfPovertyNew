@@ -7,7 +7,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
+import com.example.stocksofpoverty.data.Stock
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -50,6 +53,16 @@ suspend fun getSaveGame(
     } else {
         null
     }
+}
+suspend fun removeSaveGame(
+    dataStore: DataStore<Preferences>,
+    saveGameName: Int
+):Boolean {
+    val key = stringPreferencesKey("save_game_data_$saveGameName")
+     dataStore.edit { preferences ->
+        preferences.remove(key)
+    }
+    return true
 }
 suspend fun getAllSaveGames(dataStore: DataStore<Preferences>): List<SaveGame> {
     val saveGames = mutableListOf<SaveGame>()
@@ -117,5 +130,21 @@ suspend fun getEmptySaveSlot(dataStore: DataStore<Preferences>): Int {
         }
     }
     return -1
+}
+fun loadSave(
+    saveGame: SaveGame,
+    stocks: MutableState<List<Stock>>,
+    player: MutableState<Player>,
+    date: MutableState<Date>,
+    saveSlot: MutableState<Int>,
+    startGame: MutableState<Boolean>,
+    loadingGame: MutableState<Boolean>
+) {
+    stocks.value = saveGame.stock
+    player.value = saveGame.player
+    date.value = saveGame.date
+    saveSlot.value = saveGame.saveSlot
+    loadingGame.value = false
+    startGame.value = true
 }
 

@@ -93,12 +93,12 @@ fun StockMarketGame(
                         TopScreenIcons(
                             "Market",
                             selectedScreen,
-                            R.drawable.account_balance_fill0_wght400_grad0_opsz24
+                            R.drawable.financialprofit
                         )
                         TopScreenIcons(
-                            "Player",
+                            "Bank",
                             selectedScreen,
-                            R.drawable.account_balance_fill0_wght400_grad0_opsz24
+                            R.drawable.stockexchange
                         )
                     }
 
@@ -174,7 +174,7 @@ fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
     val priceBoxColor = remember { mutableStateOf(Color.Green) }
-    var buying = remember { mutableStateOf(false) }
+    val buying = remember { mutableStateOf(false) }
     val selling = remember { mutableStateOf(false) }
     val sharesCount = remember { mutableStateOf(0) }
     Column(
@@ -233,10 +233,10 @@ fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
                     }
                 }
                 AnimatedVisibility(buying.value) {
-                    buyingAndSelling("Buy", sharesCount, buying, stock, player, format)
+                    BuyingAndSelling("Buy", sharesCount, buying, stock, player, format)
                 }
                 AnimatedVisibility(selling.value) {
-                    buyingAndSelling("Sell", sharesCount, selling, stock, player, format)
+                    BuyingAndSelling("Sell", sharesCount, selling, stock, player, format)
                 }
             }
         }
@@ -244,7 +244,7 @@ fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
 }
 
 @Composable
-fun buyingAndSelling(
+fun BuyingAndSelling(
     label: String,
     shareCount: MutableState<Int>,
     isBuyingOrSelling: MutableState<Boolean>,
@@ -252,7 +252,7 @@ fun buyingAndSelling(
     player: MutableState<Player>,
     format: DecimalFormat
 ) {
-    var profitLosses = remember(stock.price.value, shareCount.value) {
+    val profitLosses = remember(stock.price.value, shareCount.value) {
         format.format(
             getProfitLosses(
                 shareCount,
