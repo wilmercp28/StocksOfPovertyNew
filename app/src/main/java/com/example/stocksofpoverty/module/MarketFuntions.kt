@@ -24,8 +24,13 @@ fun getAverageBuyPrice(stock: Stock, shareCount: MutableState<Int>, totalPrice: 
     return newTotal / totalShares
 }
 
-fun sellStock(stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>){
-
+fun sellStock(stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>) {
+    if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
+        player.value.yearProfit.value += getProfitLosses(shareCount, stock)
+        player.value.balance.value += shareCount.value * stock.price.value
+        stock.shares.value -= shareCount.value
+        shareCount.value = 0
+    }
 
 
 }

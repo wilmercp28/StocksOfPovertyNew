@@ -38,11 +38,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.News
+import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
+import com.example.stocksofpoverty.data.getInitialLog
+import com.example.stocksofpoverty.data.getInitialNewsList
+import com.example.stocksofpoverty.data.getInitialPerks
 import com.example.stocksofpoverty.data.getInitialPlayer
 import com.example.stocksofpoverty.data.getInitialStockList
 import com.example.stocksofpoverty.module.getAllSaveGames
@@ -57,21 +65,26 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val stocks = remember { mutableStateOf(getInitialStockList()) }
     val player = remember { mutableStateOf(getInitialPlayer()) }
     val date = remember { mutableStateOf(getInitialDate()) }
+    val logs =  remember { mutableStateOf(getInitialLog()) }
+    val banks = remember { mutableStateOf(getInitialBanks()) }
+    val news = remember { mutableStateOf(getInitialNewsList()) }
+    val perkPoint = remember { mutableStateOf(1) }
+    val tier = remember { mutableStateOf(0) }
+    val perks = remember { mutableStateOf(getInitialPerks()) }
     val format = DecimalFormat("#.##")
     val devMode = false
     val saveSlot = remember { mutableStateOf(0) }
     val startGame = remember { mutableStateOf(false) }
     val loadingGame = remember { mutableStateOf(false) }
     if (startGame.value) {
-        StockMarketGame(stocks, dataStore, player, date, format, devMode, saveSlot)
+        StockMarketGame(stocks, dataStore, player, date, format, devMode, saveSlot,banks,news,perkPoint,tier,logs,perks)
     } else if (!loadingGame.value) {
-        MainMenuUI(stocks, player, date, saveSlot, startGame, dataStore, loadingGame)
+        MainMenuUI(stocks, player, date, saveSlot, startGame, dataStore, loadingGame,perkPoint,perks,banks,news,logs,tier)
     } else if (!startGame.value && loadingGame.value) {
         LoadGameUI(dataStore, loadingGame) { saveGame ->
-            loadSave(saveGame, stocks, player, date, saveSlot, startGame, loadingGame)
+            loadSave(saveGame, stocks, player, date, saveSlot, startGame, loadingGame,logs,banks,news,perkPoint,tier)
         }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,7 +210,13 @@ fun MainMenuUI(
     saveSlot: MutableState<Int>,
     startGame: MutableState<Boolean>,
     dataStore: DataStore<Preferences>,
-    loadingGame: MutableState<Boolean>
+    loadingGame: MutableState<Boolean>,
+    perkPoint: MutableState<Int>,
+    perks: MutableState<List<Perk>>,
+    banks: MutableState<List<Bank>>,
+    news: MutableState<List<News>>,
+    logs: MutableState<List<Logs>>,
+    tier: MutableState<Int>
 ) {
     val coroutine = rememberCoroutineScope()
     Column(
@@ -209,7 +228,7 @@ fun MainMenuUI(
         Text(text = "Welcome To Stock Of Poverty", fontSize = 25.sp)
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            startNewGame(saveSlot, player, date, startGame, stocks, dataStore)
+            startNewGame(saveSlot, player, date, startGame, stocks, dataStore,perkPoint,perks,banks,tier,news,logs)
         }) {
             Text(text = "New Game", fontSize = 20.sp)
         }

@@ -7,7 +7,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
@@ -138,7 +141,12 @@ fun loadSave(
     date: MutableState<Date>,
     saveSlot: MutableState<Int>,
     startGame: MutableState<Boolean>,
-    loadingGame: MutableState<Boolean>
+    loadingGame: MutableState<Boolean>,
+    logs: MutableState<List<Logs>>,
+    banks: MutableState<List<Bank>>,
+    news: MutableState<List<News>>,
+    perkPoint: MutableState<Int>,
+    tier: MutableState<Int>
 ) {
     stocks.value = saveGame.stock
     player.value = saveGame.player

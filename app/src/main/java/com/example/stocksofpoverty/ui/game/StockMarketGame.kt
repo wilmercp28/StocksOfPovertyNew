@@ -1,9 +1,13 @@
 package com.example.stocksofpoverty.ui.game
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,7 +46,11 @@ import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.example.stocksofpoverty.R
+import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.News
+import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
@@ -50,12 +58,13 @@ import com.example.stocksofpoverty.module.Update
 import com.example.stocksofpoverty.module.buyStock
 import com.example.stocksofpoverty.module.getProfitLosses
 import com.example.stocksofpoverty.module.saveGame
+import com.example.stocksofpoverty.module.sellStock
 import com.example.stocksofpoverty.module.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import kotlin.math.abs
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun StockMarketGame(
     stocks: MutableState<List<Stock>>,
@@ -64,7 +73,13 @@ fun StockMarketGame(
     date: MutableState<Date>,
     format: DecimalFormat,
     devMode: Boolean,
-    saveSlot: MutableState<Int>
+    saveSlot: MutableState<Int>,
+    banks: MutableState<List<Bank>>,
+    news: MutableState<List<News>>,
+    perkPoint: MutableState<Int>,
+    tier: MutableState<Int>,
+    logs: MutableState<List<Logs>>,
+    perks: MutableState<List<Perk>>
 ) {
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
@@ -74,10 +89,15 @@ fun StockMarketGame(
         if (date.value.day.value == 1 && date.value.month.value == 1) {
             coroutine.launch {
                 saveGame(
-                    SaveGame(saveSlot.value,
+                    SaveGame(
+                        saveSlot.value,
                         stocks.value.toList(),
                         player.value,
-                        date.value
+                        date.value,
+                        banks.value.toList(),
+                        news.value.toList(),
+                        logs.value.toList(),
+                        tier
                     ),
                     dataStore,
                     saveSlot.value
@@ -96,9 +116,9 @@ fun StockMarketGame(
                             R.drawable.financialprofit
                         )
                         TopScreenIcons(
-                            "Bank",
+                            "Player",
                             selectedScreen,
-                            R.drawable.stockexchange
+                            R.drawable.user
                         )
                     }
 
@@ -108,7 +128,14 @@ fun StockMarketGame(
             TopAppBar(
                 title = {
                     Row() {
-                        Text(text = format.format(player.value.balance.value))
+                        AnimatedContent(
+                            player.value.balance.value,
+                            transitionSpec = {
+                                slideInVertically { -1000 } with fadeOut()
+                            }
+                        ) {
+                            Text(text = format.format(player.value.balance.value))
+                        }
                         Spacer(modifier = Modifier.weight(1f))
                         Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
                     }
@@ -129,7 +156,7 @@ fun StockMarketGame(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Stocks(stocks, player, devMode)
+            PlayerUI(player, selectedScreen,perkPoint,perks)
         }
 
     }
@@ -290,6 +317,8 @@ fun BuyingAndSelling(
             Button(onClick = {
                 if (label == "Buy") {
                     buyStock(stock, shareCount, player)
+                } else {
+                    sellStock(stock, shareCount, player)
                 }
 
             }) {
