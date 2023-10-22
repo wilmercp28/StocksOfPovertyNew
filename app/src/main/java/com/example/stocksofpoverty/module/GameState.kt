@@ -40,7 +40,7 @@ fun startNewGame(
     player.value = getInitialPlayer()
     date.value = getInitialDate()
     stocks.value = getInitialStockList()
-    perkPoint.value = 0
+    perkPoint.value = 1
     perks.value = getInitialPerks()
     banks.value = getInitialBanks()
     tier.value = 0

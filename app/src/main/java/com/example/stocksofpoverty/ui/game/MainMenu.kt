@@ -65,7 +65,7 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val stocks = remember { mutableStateOf(getInitialStockList()) }
     val player = remember { mutableStateOf(getInitialPlayer()) }
     val date = remember { mutableStateOf(getInitialDate()) }
-    val logs =  remember { mutableStateOf(getInitialLog()) }
+    val logs = remember { mutableStateOf(getInitialLog()) }
     val banks = remember { mutableStateOf(getInitialBanks()) }
     val news = remember { mutableStateOf(getInitialNewsList()) }
     val perkPoint = remember { mutableStateOf(1) }
@@ -77,12 +77,53 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val startGame = remember { mutableStateOf(false) }
     val loadingGame = remember { mutableStateOf(false) }
     if (startGame.value) {
-        StockMarketGame(stocks, dataStore, player, date, format, devMode, saveSlot,banks,news,perkPoint,tier,logs,perks)
+        StockMarketGame(
+            stocks,
+            dataStore,
+            player,
+            date,
+            format,
+            devMode,
+            saveSlot,
+            banks,
+            news,
+            perkPoint,
+            tier,
+            logs,
+            perks
+        )
     } else if (!loadingGame.value) {
-        MainMenuUI(stocks, player, date, saveSlot, startGame, dataStore, loadingGame,perkPoint,perks,banks,news,logs,tier)
+        MainMenuUI(
+            stocks,
+            player,
+            date,
+            saveSlot,
+            startGame,
+            dataStore,
+            loadingGame,
+            perkPoint,
+            perks,
+            banks,
+            news,
+            logs,
+            tier
+        )
     } else if (!startGame.value && loadingGame.value) {
         LoadGameUI(dataStore, loadingGame) { saveGame ->
-            loadSave(saveGame, stocks, player, date, saveSlot, startGame, loadingGame,logs,banks,news,perkPoint,tier)
+            loadSave(
+                saveGame,
+                stocks,
+                player,
+                date,
+                saveSlot,
+                startGame,
+                loadingGame,
+                logs,
+                banks,
+                news,
+                perkPoint,
+                tier
+            )
         }
     }
 }
@@ -122,39 +163,55 @@ fun LoadGameUI(
                 )
             }
         ) {
-            it
-            LazyColumn(
-                modifier = Modifier,
-                content = {
-                    if (saveGamesList.isNotEmpty()) {
-                        items(saveGamesList) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                showSaveGame(it, saveGamesList, dataStore,
-                                    onLoadSave = { saveGame ->
-                                        onLoadSave(saveGame)
-                                    },
-                                    onRemoveSave = { removeSave, saveSlot ->
+            Box(
+                modifier = Modifier
+                    .padding(it)
+            ) {
+                LazyColumn(
+                    modifier = Modifier,
+                    content = {
+                        if (saveGamesList.isNotEmpty()) {
+                            item {
+                                Button(onClick = {
+                                    for (saveGames in saveGamesList){
                                         coroutine.launch {
-                                            val confirmDeletion =
-                                                removeSaveGame(dataStore, saveSlot)
-                                            if (confirmDeletion) {
-                                                saveGamesList.remove(removeSave)
-                                                triggerRecomposition.value =
-                                                    !triggerRecomposition.value
-                                            }
+                                            removeSaveGame(dataStore,saveGames.saveSlot)
+                                            triggerRecomposition.value = !triggerRecomposition.value
                                         }
                                     }
-                                )
+                                }) {
+                                    Text(text = "Remove All Saves")
+                                }
                             }
+                            items(saveGamesList) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    showSaveGame(it, saveGamesList, dataStore,
+                                        onLoadSave = { saveGame ->
+                                            onLoadSave(saveGame)
+                                        },
+                                        onRemoveSave = { removeSave, saveSlot ->
+                                            coroutine.launch {
+                                                val confirmDeletion =
+                                                    removeSaveGame(dataStore, saveSlot)
+                                                if (confirmDeletion) {
+                                                    saveGamesList.remove(removeSave)
+                                                    triggerRecomposition.value =
+                                                        !triggerRecomposition.value
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
 
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -228,7 +285,20 @@ fun MainMenuUI(
         Text(text = "Welcome To Stock Of Poverty", fontSize = 25.sp)
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            startNewGame(saveSlot, player, date, startGame, stocks, dataStore,perkPoint,perks,banks,tier,news,logs)
+            startNewGame(
+                saveSlot,
+                player,
+                date,
+                startGame,
+                stocks,
+                dataStore,
+                perkPoint,
+                perks,
+                banks,
+                tier,
+                news,
+                logs
+            )
         }) {
             Text(text = "New Game", fontSize = 20.sp)
         }

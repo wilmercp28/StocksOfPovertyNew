@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +60,7 @@ import com.example.stocksofpoverty.module.buyStock
 import com.example.stocksofpoverty.module.getProfitLosses
 import com.example.stocksofpoverty.module.saveGame
 import com.example.stocksofpoverty.module.sellStock
+import com.example.stocksofpoverty.module.taxAndInterest
 import com.example.stocksofpoverty.module.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -81,11 +83,12 @@ fun StockMarketGame(
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>
 ) {
-    val selectedScreen = remember { mutableStateOf("Market") }
+    val selectedScreen = remember { mutableStateOf("Player") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
     Update(paused) {
         update(stocks, date, player)
+        taxAndInterest(player,banks,date,perks)
         if (date.value.day.value == 1 && date.value.month.value == 1) {
             coroutine.launch {
                 saveGame(
@@ -143,22 +146,27 @@ fun StockMarketGame(
             )
         }
     ) {
-        it
-        AnimatedVisibility(
-            selectedScreen.value == "Market",
-            enter = fadeIn(),
-            exit = fadeOut()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it),
+            contentAlignment = Alignment.Center
         ) {
-            Stocks(stocks, player, devMode)
+            AnimatedVisibility(
+                selectedScreen.value == "Market",
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Stocks(stocks, player, devMode)
+            }
+            AnimatedVisibility(
+                selectedScreen.value == "Player",
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format)
+            }
         }
-        AnimatedVisibility(
-            selectedScreen.value == "Player",
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            PlayerUI(player, selectedScreen,perkPoint,perks)
-        }
-
     }
 }
 
@@ -175,7 +183,6 @@ fun TopScreenIcons(iconName: String, selectedScreen: MutableState<String>, Icon:
                 .size(100.dp)
         )
     }
-
 }
 
 

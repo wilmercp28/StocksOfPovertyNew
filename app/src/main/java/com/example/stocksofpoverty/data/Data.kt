@@ -2,6 +2,12 @@ package com.example.stocksofpoverty.data
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import com.example.stocksofpoverty.R
 import kotlin.random.Random
 
@@ -70,13 +76,21 @@ fun getInitialDate(): Date {
 data class Player(
     val name: String,
     val balance: MutableState<Double>,
-    val yearProfit: MutableState<Double>
+    val yearProfit: MutableState<Double>,
+    val totalProfit: MutableState<Double>,
+    val totalPaidTaxes: MutableState<Double>,
+    val taxRate: MutableState<Double>,
+    val expectedIncomeTax: MutableState<Double>
 )
 
 fun getInitialPlayer(): Player {
     return Player(
         "Player",
         mutableStateOf(10000.00),
+        mutableStateOf(0.0),
+        mutableStateOf(0.0),
+        mutableStateOf(0.0),
+        mutableStateOf(5.0),
         mutableStateOf(0.0)
     )
 }
@@ -96,6 +110,7 @@ data class Bank(
     val interestRate: Double,
     val creditLimit: MutableState<Double>
 )
+
 fun getInitialBanks(): List<Bank> {
     val bankNames = listOf(
         Pair("Easy Bank", "Simplifying Your Finances"),
@@ -136,19 +151,41 @@ fun getInitialNewsList(): List<News> {
 
 data class Perk(
     val name: String,
-    val description: String,
+    val description: AnnotatedString,
     val active: MutableState<Boolean>,
+    val tier: Int,
     val icon: Int,
 )
 
 fun getInitialPerks(): List<Perk> {
-
-     return listOf(
-         Perk(
-             name = "Loan Interest Reduction",
-             description = "Reduces the interest rates on your bank loans by 1%.",
-             active = mutableStateOf(false),
-             R.drawable.ratedown
-         )
-     )
+    val incomeTaxDescription = buildAnnotatedString {
+        append("Reduces the interest rates on your ")
+        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Yellow)) {
+            append("IncomeTax")
+        }
+        append(" loans by 5%.")
+    }
+    val bankInterestDescription = buildAnnotatedString {
+        append("Reduces the interest rates on your ")
+        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Yellow)) {
+            append("Bank loans")
+        }
+        append(" by 5%.")
+    }
+    return listOf(
+        Perk(
+            name = "Income Tax",
+            description = incomeTaxDescription,
+            active = mutableStateOf(false),
+            1,
+            R.drawable.ratedown
+        ),
+        Perk(
+            name = "Bank interest",
+            description = bankInterestDescription,
+            active = mutableStateOf(false),
+            1,
+            R.drawable.ratedown
+        )
+    )
 }
