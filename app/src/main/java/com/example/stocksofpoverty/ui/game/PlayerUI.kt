@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -29,8 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.stocksofpoverty.data.Bank
+import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
+import com.example.stocksofpoverty.data.YearlySummary
 import java.text.DecimalFormat
 
 
@@ -42,7 +46,10 @@ fun PlayerUI(
     perks: MutableState<List<Perk>>,
     tier: MutableState<Int>,
     banks: MutableState<List<Bank>>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    yearlySummary: MutableState<List<YearlySummary>>,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
 ) {
     val selectedPerk = remember { mutableStateOf(perks.value[0]) }
     val showAlert = remember { mutableStateOf(false) }
@@ -50,11 +57,10 @@ fun PlayerUI(
         .fillMaxWidth()
         .padding(20.dp)
         .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
-    if (showAlert.value){
-        PerkAlert(selectedPerk,showAlert, onConfirm = {
-            perk ->
+    if (showAlert.value) {
+        PerkAlert(selectedPerk, showAlert, onConfirm = { perk ->
             showAlert.value = false
-            perk.active.value = true
+            perk.active = true
             perkPoint.value -= 1
         })
     }
@@ -74,32 +80,58 @@ fun PlayerUI(
             Text(text = "Perks", fontSize = 40.sp)
             Divider()
 
-            PerkTierColumn(1,perks.value.filter { it.tier == 1 },selectedPerk,showAlert)
+            PerkTierColumn(1, perks.value.filter { it.tier == 1 }, selectedPerk, showAlert)
             PerkTierColumn(2, perks.value.filter { it.tier == 2 }, selectedPerk, showAlert)
             PerkTierColumn(3, perks.value.filter { it.tier == 3 }, selectedPerk, showAlert)
         }
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = "Record", fontSize = 40.sp)
-            Divider()
-            Text(text = "Total profit")
-            Text(text = player.value.totalProfit.value.toString())
-            Text(text = "Total paid taxes")
-            Text(text = player.value.totalPaidTaxes.value.toString())
-        }
+        Records(player, modifier, format)
         Column(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             LazyRow(
                 content = {
-                    item { ResumeUI(player,format,perks) }
+                    item { ResumeUI(player, format, perks, date, yearlySummary) }
+                    if (yearlySummary.value.isNotEmpty()) {
+                        items(yearlySummary.value.reversed()) {
+                            YearlySummaryUI(player,format,it)
+                        }
+                    }
                 }
             )
         }
         Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun Records(player: MutableState<Player>, modifier: Modifier, format: DecimalFormat) {
+    Column(
+        modifier = modifier.padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Record", fontSize = 40.sp)
+        Divider()
+        Row() {
+            Text(text = "Total profit")
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = "Total paid taxes")
+        }
+        Row() {
+            Text(text = format.format(player.value.totalProfit.value))
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = format.format(player.value.totalPaidTaxes.value))
+        }
+        Row() {
+            Text(text = "Total Debt")
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = "Total Debt")
+        }
+        Row() {
+            Text(text = format.format(player.value.totalInterestPaid.value))
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = format.format(player.value.totalInterestPaid.value))
+        }
     }
 }
 
@@ -120,7 +152,7 @@ fun PerkTierColumn(
             verticalAlignment = Alignment.CenterVertically
         ) {
             perks.forEach { perk ->
-                ShowPerk(perk,selectedPerk,showAlert)
+                ShowPerk(perk, selectedPerk, showAlert)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -133,7 +165,7 @@ fun ShowPerk(perk: Perk, selectedPerk: MutableState<Perk>, showAlert: MutableSta
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clickable {
-                if (!perk.active.value) {
+                if (!perk.active) {
                     selectedPerk.value = perk
                     showAlert.value = true
                 }
@@ -142,7 +174,7 @@ fun ShowPerk(perk: Perk, selectedPerk: MutableState<Perk>, showAlert: MutableSta
         Text(text = perk.name, textAlign = TextAlign.Center, fontSize = 10.sp)
         Icon(
             painterResource(perk.icon),
-            tint = if (perk.active.value) Color.Yellow else Color.Gray,
+            tint = if (perk.active) Color.Yellow else Color.Gray,
             contentDescription = perk.name,
             modifier = Modifier.size(50.dp)
         )
@@ -150,18 +182,60 @@ fun ShowPerk(perk: Perk, selectedPerk: MutableState<Perk>, showAlert: MutableSta
 }
 
 @Composable
-fun ResumeUI(player: MutableState<Player>, format: DecimalFormat, perks: MutableState<List<Perk>>) {
-    val incomeTaxPerkActivated = perks.value.firstOrNull { it.name == "Income Tax" && it.active.value }
-    Column {
+fun ResumeUI(
+    player: MutableState<Player>,
+    format: DecimalFormat,
+    perks: MutableState<List<Perk>>,
+    date: MutableState<Date>,
+    yearlySummary: MutableState<List<YearlySummary>>
+) {
+    val incomeTaxPerkActivated =
+        perks.value.firstOrNull { it.name == "Income Tax" && it.active }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(text = "This Year")
         Divider()
         if (incomeTaxPerkActivated != null) {
-            if (incomeTaxPerkActivated.active.value)
+            if (incomeTaxPerkActivated.active)
                 Text(text = "Expected IncomeTax (-5%) ${format.format(player.value.expectedIncomeTax.value)}")
         } else {
             Text(text = "Expected IncomeTax ${format.format(player.value.expectedIncomeTax.value)}")
         }
+        if (player.value.yearProfit.value >= 0) {
+            Text(
+                text = "Profit ${format.format(player.value.yearProfit.value)}",
+                color = Color.Green
+            )
+        } else {
+            Text(text = "Loses ${format.format(player.value.yearProfit.value)}", color = Color.Red)
+        }
+        Text(text = "Total Debt ${format.format(player.value.yearlyDebt.value)}")
+        Text(text = "Interest paid ${format.format(player.value.yearlyInterestPaid.value)}")
     }
+}
 
-
+@Composable
+fun YearlySummaryUI(
+    player: MutableState<Player>,
+    format: DecimalFormat,
+    yearlySummary: YearlySummary,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = yearlySummary.date)
+        Divider()
+        Text(text = "IncomeTax ${format.format(yearlySummary.incomeTax)}")
+        if (player.value.yearProfit.value >= 0) {
+            Text(
+                text = "Profit ${format.format(yearlySummary.profit)}",
+                color = Color.Green
+            )
+        } else {
+            Text(text = "Loses ${format.format(yearlySummary.profit)}", color = Color.Red)
+        }
+        Text(text = "Total Debt ${format.format(yearlySummary.debt)}")
+        Text(text = "Interest paid ${format.format(yearlySummary.interestPaid)}")
+    }
 }

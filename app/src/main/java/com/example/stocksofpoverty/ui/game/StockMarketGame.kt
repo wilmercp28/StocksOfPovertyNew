@@ -55,12 +55,12 @@ import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.module.Update
 import com.example.stocksofpoverty.module.buyStock
 import com.example.stocksofpoverty.module.getProfitLosses
 import com.example.stocksofpoverty.module.saveGame
 import com.example.stocksofpoverty.module.sellStock
-import com.example.stocksofpoverty.module.taxAndInterest
 import com.example.stocksofpoverty.module.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -81,14 +81,14 @@ fun StockMarketGame(
     perkPoint: MutableState<Int>,
     tier: MutableState<Int>,
     logs: MutableState<List<Logs>>,
-    perks: MutableState<List<Perk>>
+    perks: MutableState<List<Perk>>,
+    yearlySummary: MutableState<List<YearlySummary>>
 ) {
-    val selectedScreen = remember { mutableStateOf("Player") }
+    val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
     Update(paused) {
-        update(stocks, date, player)
-        taxAndInterest(player,banks,date,perks)
+        update(stocks, date, player,news,logs,perks,yearlySummary,banks)
         if (date.value.day.value == 1 && date.value.month.value == 1) {
             coroutine.launch {
                 saveGame(
@@ -100,7 +100,9 @@ fun StockMarketGame(
                         banks.value.toList(),
                         news.value.toList(),
                         logs.value.toList(),
-                        tier
+                        tier,
+                        yearlySummary.value.toList(),
+                        perks.value.toList()
                     ),
                     dataStore,
                     saveSlot.value
@@ -157,14 +159,21 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Stocks(stocks, player, devMode)
+                Stocks(stocks, player, devMode,date,logs)
             }
             AnimatedVisibility(
                 selectedScreen.value == "Player",
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format)
+                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format,yearlySummary,date,logs)
+            }
+            AnimatedVisibility(
+                selectedScreen.value == "Player",
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                LogsUI(logs,date)
             }
         }
     }
@@ -187,7 +196,13 @@ fun TopScreenIcons(iconName: String, selectedScreen: MutableState<String>, Icon:
 
 
 @Composable
-fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>, devMode: Boolean) {
+fun Stocks(
+    stocks: MutableState<List<Stock>>,
+    player: MutableState<Player>,
+    devMode: Boolean,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
+) {
     LazyColumn {
         items(stocks.value) { stock ->
             Box(
@@ -196,7 +211,7 @@ fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>, devM
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                ShowStock(stock, devMode, player)
+                ShowStock(stock, devMode, player,date,logs)
             }
         }
     }
@@ -204,7 +219,11 @@ fun Stocks(stocks: MutableState<List<Stock>>, player: MutableState<Player>, devM
 }
 
 @Composable
-fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
+fun ShowStock(
+    stock: Stock, devMode: Boolean, player: MutableState<Player>,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
+) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
     val priceBoxColor = remember { mutableStateOf(Color.Green) }
@@ -267,10 +286,19 @@ fun ShowStock(stock: Stock, devMode: Boolean, player: MutableState<Player>) {
                     }
                 }
                 AnimatedVisibility(buying.value) {
-                    BuyingAndSelling("Buy", sharesCount, buying, stock, player, format)
+                    BuyingAndSelling("Buy", sharesCount, buying, stock, player, format,date,logs)
                 }
                 AnimatedVisibility(selling.value) {
-                    BuyingAndSelling("Sell", sharesCount, selling, stock, player, format)
+                    BuyingAndSelling(
+                        "Sell",
+                        sharesCount,
+                        selling,
+                        stock,
+                        player,
+                        format,
+                        date,
+                        logs
+                    )
                 }
             }
         }
@@ -284,7 +312,9 @@ fun BuyingAndSelling(
     isBuyingOrSelling: MutableState<Boolean>,
     stock: Stock,
     player: MutableState<Player>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
 ) {
     val profitLosses = remember(stock.price.value, shareCount.value) {
         format.format(
@@ -323,9 +353,9 @@ fun BuyingAndSelling(
             }
             Button(onClick = {
                 if (label == "Buy") {
-                    buyStock(stock, shareCount, player)
+                    buyStock(stock, shareCount, player,date,logs)
                 } else {
-                    sellStock(stock, shareCount, player)
+                    sellStock(stock, shareCount, player,date,logs)
                 }
 
             }) {

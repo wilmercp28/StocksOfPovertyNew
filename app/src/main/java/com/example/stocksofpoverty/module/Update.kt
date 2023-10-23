@@ -1,9 +1,14 @@
 package com.example.stocksofpoverty.module
 
 import androidx.compose.runtime.MutableState
+import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.News
+import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.YearlySummary
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -11,10 +16,35 @@ import kotlin.random.Random
 fun update(
     stocks: MutableState<List<Stock>>,
     date: MutableState<Date>,
-    player: MutableState<Player>
+    player: MutableState<Player>,
+    news: MutableState<List<News>>,
+    logs: MutableState<List<Logs>>,
+    perks: MutableState<List<Perk>>,
+    yearlySummary: MutableState<List<YearlySummary>>,
+    banks: MutableState<List<Bank>>
 ) {
     updateStockPrice(stocks)
     updateDate(date)
+    updateYearlySummary(yearlySummary,date,player)
+    taxAndInterest(player,banks,date,perks)
+}
+
+fun updateYearlySummary(
+    yearlySummary: MutableState<List<YearlySummary>>,
+    date: MutableState<Date>,
+    player: MutableState<Player>
+) {
+    if (date.value.day.value == 1 && date.value.month.value == 1 && date.value.year.value != 1){
+        val summary = YearlySummary(
+            "Year ${date.value.year.value - 1}",
+            player.value.balance.value,
+            player.value.totalDebt.value,
+            player.value.yearlyInterestPaid.value,
+            player.value.yearProfit.value,
+            player.value.expectedIncomeTax.value
+        )
+        yearlySummary.value += summary
+    }
 }
 
 fun updateStockPrice(stocks: MutableState<List<Stock>>) {

@@ -26,7 +26,6 @@ fun getInitialStockList(
     val listOfNames = getStockNameList()
     val listOfStocks = mutableListOf<Stock>()
     for (stock in listOfNames) {
-
         val name = stock.substringBefore(":")
         val abbreviation = stock.substringAfter(":")
         val randomPrice = Random.nextDouble(100.0, 1000.0)
@@ -56,7 +55,9 @@ data class SaveGame(
     val bank: List<Bank>,
     val news: List<News>,
     val logs: List<Logs>,
-    val tier: MutableState<Int>
+    val tier: MutableState<Int>,
+    val yearlySummary: List<YearlySummary>,
+    val perk: List<Perk>
 )
 
 data class Date(
@@ -80,22 +81,31 @@ data class Player(
     val totalProfit: MutableState<Double>,
     val totalPaidTaxes: MutableState<Double>,
     val taxRate: MutableState<Double>,
-    val expectedIncomeTax: MutableState<Double>
+    val expectedIncomeTax: MutableState<Double>,
+    val totalDebt: MutableState<Double>,
+    val totalInterestPaid: MutableState<Double>,
+    val yearlyDebt: MutableState<Double>,
+    val yearlyInterestPaid: MutableState<Double>
 )
 
 fun getInitialPlayer(): Player {
     return Player(
         "Player",
-        mutableStateOf(10000.00),
+        mutableStateOf(10000.00),//Balance
         mutableStateOf(0.0),
         mutableStateOf(0.0),
         mutableStateOf(0.0),
-        mutableStateOf(5.0),
+        mutableStateOf(5.0),//IncomeTax
+        mutableStateOf(0.0),
+        mutableStateOf(0.0),
+        mutableStateOf(0.0),
+        mutableStateOf(0.0),
         mutableStateOf(0.0)
     )
 }
 
 data class Logs(
+    val date: Date,
     val log: String
 )
 
@@ -120,7 +130,6 @@ fun getInitialBanks(): List<Bank> {
         Pair("Global Bank", "Connecting the World's Finances")
     )
     val banks = mutableListOf<Bank>()
-
     for (i in bankNames.indices) {
         val (name, slogan) = bankNames[i]
         val initialCreditLimit = 5000 + i * 2000
@@ -142,7 +151,8 @@ data class News(
     val title: String,
     val message: String,
     val date: Date,
-    val unread: MutableState<Boolean> = mutableStateOf(true)
+    val unread: MutableState<Boolean> = mutableStateOf(true),
+    val changesInDemand: List<Double>
 )
 
 fun getInitialNewsList(): List<News> {
@@ -151,8 +161,8 @@ fun getInitialNewsList(): List<News> {
 
 data class Perk(
     val name: String,
-    val description: AnnotatedString,
-    val active: MutableState<Boolean>,
+    val description: String,
+    var active: Boolean,
     val tier: Int,
     val icon: Int,
 )
@@ -175,17 +185,30 @@ fun getInitialPerks(): List<Perk> {
     return listOf(
         Perk(
             name = "Income Tax",
-            description = incomeTaxDescription,
-            active = mutableStateOf(false),
+            description = incomeTaxDescription.text,
+            active = false,
             1,
             R.drawable.ratedown
         ),
         Perk(
             name = "Bank interest",
-            description = bankInterestDescription,
-            active = mutableStateOf(false),
+            description = bankInterestDescription.text,
+            active = false,
             1,
             R.drawable.ratedown
         )
     )
+}
+
+data class YearlySummary(
+    val date: String,
+    val balance: Double,
+    val debt: Double,
+    val interestPaid: Double,
+    val profit: Double,
+    val incomeTax: Double
+)
+
+fun getIInitialYearlySummary(): List<YearlySummary> {
+    return emptyList<YearlySummary>()
 }

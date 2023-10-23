@@ -1,15 +1,23 @@
 package com.example.stocksofpoverty.module
 
 import androidx.compose.runtime.MutableState
+import com.example.stocksofpoverty.data.Date
+import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
 
-fun buyStock(stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>) {
+fun buyStock(
+    stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
+) {
     val totalPrice = stock.price.value * shareCount.value
     if (totalPrice < player.value.balance.value && shareCount.value != 0) {
         player.value.balance.value -= totalPrice
         stock.averageBuyPrice.value = getAverageBuyPrice(stock, shareCount, totalPrice)
         stock.shares.value += shareCount.value
+        val log = Logs(date.value,"Bought ${shareCount.value} share of ${stock.name} at ${stock.price.value} ")
+        logs.value += log
         shareCount.value = 0
     } else {
         val howManyCanAfford = player.value.balance.value / stock.price.value
@@ -24,9 +32,16 @@ fun getAverageBuyPrice(stock: Stock, shareCount: MutableState<Int>, totalPrice: 
     return newTotal / totalShares
 }
 
-fun sellStock(stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>) {
+fun sellStock(
+    stock: Stock,
+    shareCount: MutableState<Int>,
+    player: MutableState<Player>,
+    date: MutableState<Date>,
+    logs: MutableState<List<Logs>>
+) {
     if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
         player.value.yearProfit.value += getProfitLosses(shareCount, stock)
+        player.value.totalProfit.value += getProfitLosses(shareCount, stock)
         player.value.balance.value += shareCount.value * stock.price.value
         stock.shares.value -= shareCount.value
         shareCount.value = 0

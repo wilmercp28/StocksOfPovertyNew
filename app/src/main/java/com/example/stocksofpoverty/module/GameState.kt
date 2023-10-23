@@ -11,6 +11,7 @@ import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
@@ -35,7 +36,8 @@ fun startNewGame(
     banks: MutableState<List<Bank>>,
     tier: MutableState<Int>,
     news: MutableState<List<News>>,
-    logs: MutableState<List<Logs>>
+    logs: MutableState<List<Logs>>,
+    yearlySummary: MutableState<List<YearlySummary>>
 ) {
     player.value = getInitialPlayer()
     date.value = getInitialDate()
@@ -56,7 +58,9 @@ fun startNewGame(
             banks.value,
             news.value,
             logs.value,
-            tier
+            tier,
+            yearlySummary.value.toList(),
+            perks.value.toList()
         )
         saveGame(saveGame, dataStore, saveSlot.value)
         startGame.value = true

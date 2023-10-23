@@ -46,6 +46,8 @@ import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.getIInitialYearlySummary
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
@@ -71,6 +73,7 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val perkPoint = remember { mutableStateOf(1) }
     val tier = remember { mutableStateOf(0) }
     val perks = remember { mutableStateOf(getInitialPerks()) }
+    val yearlySummary = remember { mutableStateOf(getIInitialYearlySummary()) }
     val format = DecimalFormat("#.##")
     val devMode = false
     val saveSlot = remember { mutableStateOf(0) }
@@ -90,7 +93,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             perkPoint,
             tier,
             logs,
-            perks
+            perks,
+            yearlySummary
         )
     } else if (!loadingGame.value) {
         MainMenuUI(
@@ -106,7 +110,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             banks,
             news,
             logs,
-            tier
+            tier,
+            yearlySummary
         )
     } else if (!startGame.value && loadingGame.value) {
         LoadGameUI(dataStore, loadingGame) { saveGame ->
@@ -273,7 +278,8 @@ fun MainMenuUI(
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
-    tier: MutableState<Int>
+    tier: MutableState<Int>,
+    yearlySummary: MutableState<List<YearlySummary>>
 ) {
     val coroutine = rememberCoroutineScope()
     Column(
@@ -297,7 +303,8 @@ fun MainMenuUI(
                 banks,
                 tier,
                 news,
-                logs
+                logs,
+                yearlySummary
             )
         }) {
             Text(text = "New Game", fontSize = 20.sp)
