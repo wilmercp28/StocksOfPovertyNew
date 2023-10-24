@@ -88,7 +88,7 @@ fun StockMarketGame(
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
     Update(paused) {
-        update(stocks, date, player,news,logs,perks,yearlySummary,banks)
+        update(stocks, date, player,news,logs,perks,yearlySummary,banks,format)
         if (date.value.day.value == 1 && date.value.month.value == 1) {
             coroutine.launch {
                 saveGame(
@@ -124,6 +124,16 @@ fun StockMarketGame(
                             "Player",
                             selectedScreen,
                             R.drawable.user
+                        )
+                        TopScreenIcons(
+                            "Bank",
+                            selectedScreen,
+                            R.drawable.bank
+                        )
+                        TopScreenIcons(
+                            "Logs",
+                            selectedScreen,
+                            R.drawable.logs
                         )
                     }
 
@@ -166,14 +176,21 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format,yearlySummary,date,logs)
+                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format,yearlySummary,date,logs,devMode)
             }
             AnimatedVisibility(
-                selectedScreen.value == "Player",
+                selectedScreen.value == "Logs",
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
                 LogsUI(logs,date)
+            }
+            AnimatedVisibility(
+                selectedScreen.value == "Bank",
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                BanksUI(player,banks,date,logs,format,tier)
             }
         }
     }
@@ -353,9 +370,9 @@ fun BuyingAndSelling(
             }
             Button(onClick = {
                 if (label == "Buy") {
-                    buyStock(stock, shareCount, player,date,logs)
+                    buyStock(stock, shareCount, player,date,logs,format)
                 } else {
-                    sellStock(stock, shareCount, player,date,logs)
+                    sellStock(stock, shareCount, player,date,logs,format)
                 }
 
             }) {

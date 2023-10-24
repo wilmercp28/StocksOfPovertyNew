@@ -75,7 +75,7 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val perks = remember { mutableStateOf(getInitialPerks()) }
     val yearlySummary = remember { mutableStateOf(getIInitialYearlySummary()) }
     val format = DecimalFormat("#.##")
-    val devMode = false
+    val devMode = true
     val saveSlot = remember { mutableStateOf(0) }
     val startGame = remember { mutableStateOf(false) }
     val loadingGame = remember { mutableStateOf(false) }

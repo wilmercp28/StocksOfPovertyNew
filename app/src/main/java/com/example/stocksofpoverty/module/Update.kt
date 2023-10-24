@@ -9,6 +9,7 @@ import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
+import java.text.DecimalFormat
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -21,12 +22,13 @@ fun update(
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
     yearlySummary: MutableState<List<YearlySummary>>,
-    banks: MutableState<List<Bank>>
+    banks: MutableState<List<Bank>>,
+    format: DecimalFormat
 ) {
     updateStockPrice(stocks)
     updateDate(date)
     updateYearlySummary(yearlySummary,date,player)
-    taxAndInterest(player,banks,date,perks)
+    taxAndInterest(player,banks,date,perks,logs,format)
 }
 
 fun updateYearlySummary(

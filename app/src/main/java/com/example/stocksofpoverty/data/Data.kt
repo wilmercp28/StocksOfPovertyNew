@@ -1,5 +1,6 @@
 package com.example.stocksofpoverty.data
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
@@ -66,6 +67,10 @@ data class Date(
     val year: MutableState<Int>
 )
 
+fun getDateToString(date: Date): String {
+    return "Day ${date.day.value} Month ${date.month.value} Year ${date.year.value}"
+}
+
 fun getInitialDate(): Date {
     return Date(
         mutableStateOf(1),
@@ -105,7 +110,7 @@ fun getInitialPlayer(): Player {
 }
 
 data class Logs(
-    val date: Date,
+    val date: String,
     val log: String
 )
 
@@ -118,7 +123,8 @@ data class Bank(
     val slogan: String,
     val loanBalance: MutableState<Double>,
     val interestRate: Double,
-    val creditLimit: MutableState<Double>
+    val creditLimit: MutableState<Double>,
+    val tierNeeded: Int
 )
 
 fun getInitialBanks(): List<Bank> {
@@ -127,23 +133,34 @@ fun getInitialBanks(): List<Bank> {
         Pair("Secure Bank", "Your Safety, Our Priority"),
         Pair("Elite Bank", "Banking for the Elite"),
         Pair("Smart Bank", "Innovative Banking Solutions"),
-        Pair("Global Bank", "Connecting the World's Finances")
+        Pair("Global Bank", "Connecting the World's Finances"),
+        Pair("Special Bank", "Your Special Banking Experience")
     )
     val banks = mutableListOf<Bank>()
     for (i in bankNames.indices) {
         val (name, slogan) = bankNames[i]
-        val initialCreditLimit = 5000 + i * 2000
-        val initialInterestRate = 0.02 + i * 0.005
+        val initialCreditLimit = 5000 + i * 5000
+        val initialInterestRate = 5 + i * 2
         banks.add(
             Bank(
                 name = name,
                 slogan = slogan,
                 loanBalance = mutableStateOf(0.0),
-                interestRate = initialInterestRate,
-                creditLimit = mutableStateOf(initialCreditLimit.toDouble())
+                interestRate = initialInterestRate.toDouble(),
+                creditLimit = mutableStateOf(initialCreditLimit.toDouble()),
+                tierNeeded = when (i) {
+                    0 -> 0
+                    1 -> 1
+                    2 -> 1
+                    3 -> 2
+                    4 -> 2
+                    5 -> 3
+                    else -> { 0}
+                }
             )
         )
     }
+    Log.d("Banks", banks.toString())
     return banks
 }
 

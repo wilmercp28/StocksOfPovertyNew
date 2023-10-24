@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.getDateToString
 import java.text.DecimalFormat
 
 
@@ -49,7 +51,8 @@ fun PlayerUI(
     format: DecimalFormat,
     yearlySummary: MutableState<List<YearlySummary>>,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>
+    logs: MutableState<List<Logs>>,
+    devMode: Boolean
 ) {
     val selectedPerk = remember { mutableStateOf(perks.value[0]) }
     val showAlert = remember { mutableStateOf(false) }
@@ -61,6 +64,8 @@ fun PlayerUI(
         PerkAlert(selectedPerk, showAlert, onConfirm = { perk ->
             showAlert.value = false
             perk.active = true
+            val log = Logs(getDateToString(date.value),"${perk.name} perk has been activated")
+            logs.value += log
             perkPoint.value -= 1
         })
     }
@@ -72,6 +77,11 @@ fun PlayerUI(
         Text(text = "Personal Finances", fontSize = 20.sp)
         if (perkPoint.value > 0) {
             Text(text = "Available perk points ${perkPoint.value}", color = Color.Yellow)
+        }
+        if (devMode){
+            Button(onClick = { tier.value += 1 }) {
+                Text(text = "Tier Up")
+            }
         }
         Column(
             modifier = modifier,
