@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
@@ -87,26 +88,28 @@ fun StockMarketGame(
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
-    Update(paused) {
-        update(stocks, date, player,news,logs,perks,yearlySummary,banks,format)
-        if (date.value.day.value == 1 && date.value.month.value == 1) {
-            coroutine.launch {
-                saveGame(
-                    SaveGame(
-                        saveSlot.value,
-                        stocks.value.toList(),
-                        player.value,
-                        date.value,
-                        banks.value.toList(),
-                        news.value.toList(),
-                        logs.value.toList(),
-                        tier,
-                        yearlySummary.value.toList(),
-                        perks.value.toList()
-                    ),
-                    dataStore,
-                    saveSlot.value
-                )
+    Update() {
+        if (!paused.value) {
+            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format)
+            if (date.value.day.value == 1 && date.value.month.value == 1) {
+                coroutine.launch {
+                    saveGame(
+                        SaveGame(
+                            saveSlot.value,
+                            stocks.value.toList(),
+                            player.value,
+                            date.value,
+                            banks.value.toList(),
+                            news.value.toList(),
+                            logs.value.toList(),
+                            tier,
+                            yearlySummary.value.toList(),
+                            perks.value.toList()
+                        ),
+                        dataStore,
+                        saveSlot.value
+                    )
+                }
             }
         }
     }
@@ -131,6 +134,11 @@ fun StockMarketGame(
                             R.drawable.bank
                         )
                         TopScreenIcons(
+                            "News",
+                            selectedScreen,
+                            R.drawable.newspaper
+                        )
+                        TopScreenIcons(
                             "Logs",
                             selectedScreen,
                             R.drawable.logs
@@ -149,10 +157,18 @@ fun StockMarketGame(
                                 slideInVertically { -1000 } with fadeOut()
                             }
                         ) {
-                            Text(text = format.format(player.value.balance.value))
+                            Spacer(modifier = Modifier.weight(1f))
+                            Column(
+                            ) {
+                                Text(text = "Balance ${format.format(player.value.balance.value)}")
+                                Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
+                            }
                         }
                         Spacer(modifier = Modifier.weight(1f))
-                        Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
+                        Button(onClick = { paused.value = !paused.value }) {
+                            Text(text = if (paused.value) "Resume" else "Pause")
+
+                        }
                     }
                 }
             )
@@ -169,28 +185,47 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Stocks(stocks, player, devMode,date,logs)
+                Stocks(stocks, player, devMode, date, logs)
             }
             AnimatedVisibility(
                 selectedScreen.value == "Player",
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                PlayerUI(player, selectedScreen, perkPoint, perks,tier,banks,format,yearlySummary,date,logs,devMode)
+                PlayerUI(
+                    player,
+                    selectedScreen,
+                    perkPoint,
+                    perks,
+                    tier,
+                    banks,
+                    format,
+                    yearlySummary,
+                    date,
+                    logs,
+                    devMode
+                )
             }
             AnimatedVisibility(
                 selectedScreen.value == "Logs",
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                LogsUI(logs,date)
+                LogsUI(logs, date)
             }
             AnimatedVisibility(
                 selectedScreen.value == "Bank",
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                BanksUI(player,banks,date,logs,format,tier)
+                BanksUI(player, banks, date, logs, format, tier)
+            }
+            AnimatedVisibility(
+                selectedScreen.value == "News",
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                NewsUI(news)
             }
         }
     }
@@ -228,7 +263,7 @@ fun Stocks(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                ShowStock(stock, devMode, player,date,logs)
+                ShowStock(stock, devMode, player, date, logs)
             }
         }
     }
@@ -247,34 +282,86 @@ fun ShowStock(
     val buying = remember { mutableStateOf(false) }
     val selling = remember { mutableStateOf(false) }
     val sharesCount = remember { mutableStateOf(0) }
+    val pharmaIcon = painterResource(R.drawable.stockfarmaicon)
+    val techIcon = painterResource(R.drawable.stocktechicon)
+    val financeIcon = painterResource(R.drawable.stockfianceicon)
+    val energyIcon = painterResource(R.drawable.stockfianceicon)
     Column(
         modifier = Modifier
-            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
-            .padding(10.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .clickable {
-                    expanded.value = !expanded.value
-                },
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(text = stock.name, fontSize = 20.sp)
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = format.format(stock.price.value), fontSize = 20.sp,
-                modifier = Modifier
-                    .background(priceBoxColor.value, RoundedCornerShape(10.dp))
-                    .padding(5.dp)
+            .fillMaxWidth()
+            .padding(10.dp)
+            .background(
+                if (stock.inEvent && devMode) {
+                    Color.Yellow
+                } else MaterialTheme.colorScheme.background
             )
-        }
-        if (stock.shares.value > 0) {
-            Text(text = "${stock.shares.value} Shares at avg price of ${stock.averageBuyPrice.value}")
-        }
-        if (devMode) {
-            Text(text = "Demand ${format.format(stock.demand)} Supply ${format.format(stock.supply)}")
-            Button(onClick = { stock.demand += 100 }) {
-                Text(text = "increase Demand")
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+            .clickable {
+                expanded.value = !expanded.value
+                sharesCount.value = 0
+            },
+    ) {
+
+        Column(
+            modifier = Modifier
+                .padding(10.dp)
+        ) {
+            Row() {
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+                        .padding(5.dp)
+                ) {
+                    Text(text = stock.category, fontSize = 20.sp)
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    painter = when (stock.category) {
+                        "Finance" -> financeIcon
+                        "Tech" -> techIcon
+                        "Pharma" -> pharmaIcon
+                        "Energy" -> energyIcon
+
+                        else -> financeIcon
+                    },
+                    contentDescription = "Stock Icon",
+                    modifier = Modifier
+                        .size(40.dp)
+                )
+            }
+            Text(text = stock.name, fontSize = 30.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            Row(
+                modifier = Modifier
+                    .background(
+                        if (stock.percentageChange.value >= 0) Color.Green else Color.Red,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .fillMaxWidth()
+                    .padding(5.dp)
+            ) {
+                Text(
+                    text = format.format(stock.price.value),
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "${stock.percentageChange.value}%",
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+            }
+            if (stock.shares.value > 0) {
+                Text(text = "${stock.shares.value} Shares at avg price of ${format.format(stock.averageBuyPrice.value)}", fontSize = 20.sp)
+            }
+            if (devMode) {
+                Text(text = "Demand ${format.format(stock.demand)} Supply ${format.format(stock.supply)}")
+                Button(onClick = { stock.demand += 100 }) {
+                    Text(text = "increase Demand")
+                }
             }
         }
         AnimatedVisibility(expanded.value) {
@@ -303,7 +390,16 @@ fun ShowStock(
                     }
                 }
                 AnimatedVisibility(buying.value) {
-                    BuyingAndSelling("Buy", sharesCount, buying, stock, player, format,date,logs)
+                    BuyingAndSelling(
+                        "Buy",
+                        sharesCount,
+                        buying,
+                        stock,
+                        player,
+                        format,
+                        date,
+                        logs
+                    )
                 }
                 AnimatedVisibility(selling.value) {
                     BuyingAndSelling(
@@ -320,6 +416,7 @@ fun ShowStock(
             }
         }
     }
+
 }
 
 @Composable
@@ -370,13 +467,18 @@ fun BuyingAndSelling(
             }
             Button(onClick = {
                 if (label == "Buy") {
-                    buyStock(stock, shareCount, player,date,logs,format)
+                    buyStock(stock, shareCount, player, date, logs, format,isBuyingOrSelling)
                 } else {
-                    sellStock(stock, shareCount, player,date,logs,format)
+                    sellStock(stock, shareCount, player, date, logs, format,isBuyingOrSelling)
                 }
 
             }) {
-                Text(text = label)
+                if (label == "Sell") {
+                    Text(text = if (shareCount.value == 0) "Sell all" else "Sell")
+                }
+                if (label == "Buy") {
+                    Text(text = if (shareCount.value == 0) "Max" else "Buy")
+                }
             }
         }
         Row(

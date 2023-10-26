@@ -15,11 +15,16 @@ import kotlin.random.Random
 data class Stock(
     val name: String,
     val symbol: String,
+    val category: String,
     val price: MutableState<Double>,
+    val lastYearPrice: MutableState<Double>,
+    val percentageChange: MutableState<Double>,
     var demand: Double,
     var supply: Double,
     val shares: MutableState<Int>,
-    val averageBuyPrice: MutableState<Double>
+    val averageBuyPrice: MutableState<Double>,
+    var inEvent: Boolean = false,
+    var demandChangesList: MutableList<Int> = mutableListOf()
 )
 
 fun getInitialStockList(
@@ -28,7 +33,8 @@ fun getInitialStockList(
     val listOfStocks = mutableListOf<Stock>()
     for (stock in listOfNames) {
         val name = stock.substringBefore(":")
-        val abbreviation = stock.substringAfter(":")
+        val abbreviation = stock.substringAfter(":").substringBefore(":")
+        val category = stock.substringAfterLast(":")
         val randomPrice = Random.nextDouble(100.0, 1000.0)
         val randomSupply = Random.nextDouble(100.00) + 100
         val randomDemand = Random.nextDouble(100.00) + 100
@@ -37,10 +43,13 @@ fun getInitialStockList(
             Stock(
                 name,
                 abbreviation,
+                category,
                 mutableStateOf(randomPrice),
+                mutableStateOf(randomPrice),
+                mutableStateOf(0.0),
                 randomDemand,
                 randomSupply,
-                mutableStateOf(5),
+                mutableStateOf(0),
                 mutableStateOf(0.0)
             )
         listOfStocks += stock
@@ -155,7 +164,9 @@ fun getInitialBanks(): List<Bank> {
                     3 -> 2
                     4 -> 2
                     5 -> 3
-                    else -> { 0}
+                    else -> {
+                        0
+                    }
                 }
             )
         )
@@ -167,13 +178,14 @@ fun getInitialBanks(): List<Bank> {
 data class News(
     val title: String,
     val message: String,
-    val date: Date,
+    val stockName: String,
+    val date: String,
     val unread: MutableState<Boolean> = mutableStateOf(true),
-    val changesInDemand: List<Double>
+    var changesInDemand: List<Double> = emptyList()
 )
 
 fun getInitialNewsList(): List<News> {
-    return emptyList<News>()
+    return emptyList()
 }
 
 data class Perk(

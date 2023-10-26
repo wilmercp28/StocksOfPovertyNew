@@ -48,7 +48,7 @@ fun BanksUI(
     val isShowingBank = remember { mutableStateOf(false) }
     val showingBank = remember { mutableStateOf(banks.value[0]) }
     if (isShowingBank.value) {
-        ShowBank(showingBank, isShowingBank,player)
+        ShowBank(showingBank, isShowingBank,player,logs,date)
     } else {
         Column(
             modifier = Modifier
@@ -129,7 +129,9 @@ fun BankList(
 fun ShowBank(
     bank: MutableState<Bank>,
     isShowingBank: MutableState<Boolean>,
-    player: MutableState<Player>
+    player: MutableState<Player>,
+    logs: MutableState<List<Logs>>,
+    date: MutableState<Date>
 ) {
     val interestRate = bank.value.interestRate / 100
     Column(
@@ -163,9 +165,9 @@ fun ShowBank(
         }
         if (bank.value.loanBalance.value == 0.0) {
             Button(onClick = {
-                getLoan(bank,player)
+                getLoan(bank,player,logs,date)
             }) {
-                Text(text = "Take Loand")
+                Text(text = "Take loan")
             }
         } else {
             Button(onClick = {

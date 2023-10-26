@@ -1,5 +1,6 @@
 package com.example.stocksofpoverty.module
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
@@ -25,10 +26,48 @@ fun update(
     banks: MutableState<List<Bank>>,
     format: DecimalFormat
 ) {
-    updateStockPrice(stocks)
+    updateStockPrice(stocks, date, format)
     updateDate(date)
-    updateYearlySummary(yearlySummary,date,player)
-    taxAndInterest(player,banks,date,perks,logs,format)
+    updateYearlySummary(yearlySummary, date, player)
+    taxAndInterest(player, banks, date, perks, logs, format)
+    if (date.value.month.value % 4 == 0 && date.value.day.value == 1) {
+        updateNews(news, player, date, stocks)
+    }
+    applyMonthlyDemandChanges(stocks, date)
+}
+
+fun applyMonthlyDemandChanges(stocks: MutableState<List<Stock>>, date: MutableState<Date>) {
+    if (date.value.day.value == 1) {
+        for (stock in stocks.value) {
+            if (stock.inEvent && stock.demandChangesList.isNotEmpty()) {
+                stock.demand += stock.demandChangesList.first()
+                Log.d(
+                    stock.name,
+                    "List ${stock.demandChangesList} Apply and Remove ${stock.demandChangesList.first()}"
+                )
+                stock.demandChangesList.remove(stock.demandChangesList.first())
+                if (stock.demandChangesList.isEmpty()) stock.inEvent = false
+            }
+        }
+    }
+}
+
+fun updateNews(
+    news: MutableState<List<News>>,
+    player: MutableState<Player>,
+    date: MutableState<Date>,
+    stocks: MutableState<List<Stock>>
+) {
+    val maxNewsPossible = 3
+    var currentNewsGenerated = 0
+    for (stock in stocks.value) {
+        val random = Random.nextDouble()
+        if (random <= 0.10 && currentNewsGenerated < maxNewsPossible && !stock.inEvent) {
+            currentNewsGenerated += 1
+            generateNews(news, date, stock)
+            Log.d("News", "News Generated")
+        }
+    }
 }
 
 fun updateYearlySummary(
@@ -36,7 +75,7 @@ fun updateYearlySummary(
     date: MutableState<Date>,
     player: MutableState<Player>
 ) {
-    if (date.value.day.value == 1 && date.value.month.value == 1 && date.value.year.value != 1){
+    if (date.value.day.value == 1 && date.value.month.value == 1 && date.value.year.value != 1) {
         val summary = YearlySummary(
             "Year ${date.value.year.value - 1}",
             player.value.balance.value,
@@ -49,10 +88,15 @@ fun updateYearlySummary(
     }
 }
 
-fun updateStockPrice(stocks: MutableState<List<Stock>>) {
+fun updateStockPrice(
+    stocks: MutableState<List<Stock>>,
+    date: MutableState<Date>,
+    format: DecimalFormat
+) {
     val priceSensitivity = 0.01
     val supplySensitivity = 0.5
     for (stock in stocks.value) {
+        getPercentageChange(date, stock, format)
         val supplyDemandDif = stock.demand - stock.supply
         val randomPriceIncrease = Random.nextDouble() * supplyDemandDif
         val randomFluctuations = (Random.nextDouble() * 0.4) - 0.2
@@ -66,12 +110,20 @@ fun updateStockPrice(stocks: MutableState<List<Stock>>) {
     }
 }
 
+fun getPercentageChange(date: MutableState<Date>, stock: Stock, format: DecimalFormat) {
+    if (date.value.day.value == 1 && date.value.month.value == 1) {
+        stock.lastYearPrice.value = stock.price.value
+    }
+    stock.percentageChange.value =
+        format.format(((stock.price.value - stock.lastYearPrice.value) / stock.lastYearPrice.value) * 100).toDouble()
+}
+
 fun updateDate(date: MutableState<Date>) {
     date.value.day.value++
-    if (date.value.day.value > 30){
+    if (date.value.day.value > 30) {
         date.value.day.value = 1
         date.value.month.value++
-        if (date.value.month.value > 12){
+        if (date.value.month.value > 12) {
             date.value.month.value = 1
             date.value.year.value++
         }

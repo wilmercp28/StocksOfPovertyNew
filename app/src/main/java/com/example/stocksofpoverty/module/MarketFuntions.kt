@@ -13,7 +13,8 @@ fun buyStock(
     stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    isBuyingOrSelling: MutableState<Boolean>
 ) {
     val totalPrice = stock.price.value * shareCount.value
     if (totalPrice < player.value.balance.value && shareCount.value != 0) {
@@ -23,6 +24,7 @@ fun buyStock(
         val log = Logs(getDateToString(date.value),"Bought ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} ")
         logs.value += log
         shareCount.value = 0
+        isBuyingOrSelling.value = false
     } else {
         val howManyCanAfford = player.value.balance.value / stock.price.value
         shareCount.value = howManyCanAfford.toInt()
@@ -42,7 +44,8 @@ fun sellStock(
     player: MutableState<Player>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    isBuyingOrSelling: MutableState<Boolean>
 ) {
     if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
         player.value.yearProfit.value += getProfitLosses(shareCount, stock)
@@ -52,6 +55,9 @@ fun sellStock(
         val log = Logs(getDateToString(date.value),"Sold ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} ")
         logs.value += log
         shareCount.value = 0
+        isBuyingOrSelling.value = false
+    } else {
+        shareCount.value = stock.shares.value
     }
 
 
@@ -63,9 +69,16 @@ fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock): Double {
     val difference = totalIfSellOut - totalInvested
     return difference * shareCount.value
 }
-fun getLoan(bank: MutableState<Bank>, player: MutableState<Player>) {
+fun getLoan(
+    bank: MutableState<Bank>,
+    player: MutableState<Player>,
+    logs: MutableState<List<Logs>>,
+    date: MutableState<Date>
+) {
     player.value.balance.value += bank.value.creditLimit.value
     bank.value.loanBalance.value += bank.value.creditLimit.value
+    val log = Logs(getDateToString(date.value),"Took a loan from ${bank.value.name} for ${bank.value.creditLimit.value.toInt()}")
+    logs.value += log
 }
 fun payoffLoan(bank: MutableState<Bank>, player: MutableState<Player>) {
     if (player.value.balance.value >= bank.value.loanBalance.value){

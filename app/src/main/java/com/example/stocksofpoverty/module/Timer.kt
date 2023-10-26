@@ -7,11 +7,10 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun Update(
-    paused: MutableState<Boolean>,
     update: () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        while (!paused.value) {
+        while (true) {
             update()
             delay(100)
         }

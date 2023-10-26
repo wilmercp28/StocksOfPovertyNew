@@ -25,7 +25,7 @@ fun LogsUI(logs: MutableState<List<Logs>>, date: MutableState<Date>) {
 
     LazyColumn(
         content = {
-            items(logs.value) { log ->
+            items(logs.value.reversed()) { log ->
                 Column(modifier = Modifier
                     .fillMaxWidth()
                     .padding(5.dp)
