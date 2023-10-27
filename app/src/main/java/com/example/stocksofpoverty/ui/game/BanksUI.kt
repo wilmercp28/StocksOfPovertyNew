@@ -63,7 +63,7 @@ fun BanksUI(
                 verticalArrangement = Arrangement.Center,
                 content = {
                     items(banks.value) { bank ->
-                        BankList(bank, tier, format, isShowingBank, showingBank,player)
+                        BankList(bank, tier, format, isShowingBank, showingBank)
                     }
                 }
             )
@@ -77,8 +77,7 @@ fun BankList(
     tier: MutableState<Int>,
     format: DecimalFormat,
     isShowingBank: MutableState<Boolean>,
-    showingBank: MutableState<Bank>,
-    player: MutableState<Player>
+    showingBank: MutableState<Bank>
 ) {
     val boxColor =
         if (bank.tierNeeded <= tier.value) MaterialTheme.colorScheme.primary else Color.Gray

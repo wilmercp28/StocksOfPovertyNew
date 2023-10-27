@@ -17,13 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.stocksofpoverty.R
@@ -64,22 +59,9 @@ fun ShowNews(news: News) {
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val annotatedTitle = buildAnnotatedString {
-            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                append(news.stockName)
-            }
-            append(" ${news.title}")
-        }
-        val annotatedMessage = buildAnnotatedString {
-            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                append(news.stockName)
-            }
-            append(" ${news.message}")
-        }
-
-        Text(text = annotatedTitle,fontSize = 30.sp, textAlign = TextAlign.Center)
+        Text(text = annotateRecursively(listOf(news.stockName),news.title),fontSize = 20.sp, textAlign = TextAlign.Center)
         Divider()
-        Text(text = annotatedMessage,fontSize = 20.sp, textAlign = TextAlign.Center)
+        Text(text = annotateRecursively(listOf(news.stockName),news.message),fontSize = 15.sp, textAlign = TextAlign.Center)
         Divider()
         Text(text = news.date,fontSize = 20.sp, textAlign = TextAlign.Center)
     }

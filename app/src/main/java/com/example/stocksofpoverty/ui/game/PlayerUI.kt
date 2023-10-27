@@ -30,7 +30,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.Perk
@@ -43,11 +42,9 @@ import java.text.DecimalFormat
 @Composable
 fun PlayerUI(
     player: MutableState<Player>,
-    selectedScreen: MutableState<String>,
     perkPoint: MutableState<Int>,
     perks: MutableState<List<Perk>>,
     tier: MutableState<Int>,
-    banks: MutableState<List<Bank>>,
     format: DecimalFormat,
     yearlySummary: MutableState<List<YearlySummary>>,
     date: MutableState<Date>,
@@ -101,7 +98,7 @@ fun PlayerUI(
         ) {
             LazyRow(
                 content = {
-                    item { ResumeUI(player, format, perks, date, yearlySummary) }
+                    item { ResumeUI(player, format, perks) }
                     if (yearlySummary.value.isNotEmpty()) {
                         items(yearlySummary.value.reversed()) {
                             YearlySummaryUI(player,format,it)
@@ -122,22 +119,22 @@ fun Records(player: MutableState<Player>, modifier: Modifier, format: DecimalFor
     ) {
         Text(text = "Record", fontSize = 40.sp)
         Divider()
-        Row() {
+        Row {
             Text(text = "Total profit")
             Spacer(modifier = Modifier.weight(1f))
             Text(text = "Total paid taxes")
         }
-        Row() {
+        Row{
             Text(text = format.format(player.value.totalProfit.value))
             Spacer(modifier = Modifier.weight(1f))
             Text(text = format.format(player.value.totalPaidTaxes.value))
         }
-        Row() {
+        Row{
             Text(text = "Total Debt")
             Spacer(modifier = Modifier.weight(1f))
             Text(text = "Total Debt")
         }
-        Row() {
+        Row{
             Text(text = format.format(player.value.totalInterestPaid.value))
             Spacer(modifier = Modifier.weight(1f))
             Text(text = format.format(player.value.totalInterestPaid.value))
@@ -196,8 +193,6 @@ fun ResumeUI(
     player: MutableState<Player>,
     format: DecimalFormat,
     perks: MutableState<List<Perk>>,
-    date: MutableState<Date>,
-    yearlySummary: MutableState<List<YearlySummary>>
 ) {
     val incomeTaxPerkActivated =
         perks.value.firstOrNull { it.name == "Income Tax" && it.active }

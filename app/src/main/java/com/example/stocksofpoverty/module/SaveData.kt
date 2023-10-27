@@ -2,7 +2,6 @@ package com.example.stocksofpoverty.module
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -15,16 +14,7 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.createDynamicGson
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
 import kotlinx.coroutines.flow.firstOrNull
-import java.lang.reflect.Type
 
 
 val gson = createDynamicGson()
@@ -95,8 +85,6 @@ fun loadSave(
     logs: MutableState<List<Logs>>,
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
-    perkPoint: MutableState<Int>,
-    tier: MutableState<Int>
 ) {
     stocks.value = saveGame.stock
     player.value = saveGame.player

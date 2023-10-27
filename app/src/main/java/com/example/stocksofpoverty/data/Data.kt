@@ -3,12 +3,6 @@ package com.example.stocksofpoverty.data
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import com.example.stocksofpoverty.R
 import kotlin.random.Random
 
@@ -39,7 +33,7 @@ fun getInitialStockList(
         val randomSupply = Random.nextDouble(100.00) + 100
         val randomDemand = Random.nextDouble(100.00) + 100
 
-        val stock =
+        val stockObject =
             Stock(
                 name,
                 abbreviation,
@@ -52,7 +46,7 @@ fun getInitialStockList(
                 mutableStateOf(0),
                 mutableStateOf(0.0)
             )
-        listOfStocks += stock
+        listOfStocks += stockObject
     }
     return listOfStocks
 }
@@ -124,7 +118,7 @@ data class Logs(
 )
 
 fun getInitialLog(): List<Logs> {
-    return emptyList<Logs>()
+    return emptyList()
 }
 
 data class Bank(
@@ -133,7 +127,8 @@ data class Bank(
     val loanBalance: MutableState<Double>,
     val interestRate: Double,
     val creditLimit: MutableState<Double>,
-    val tierNeeded: Int
+    val tierNeeded: Int,
+    var dayToPayInterest: Int
 )
 
 fun getInitialBanks(): List<Bank> {
@@ -167,7 +162,8 @@ fun getInitialBanks(): List<Bank> {
                     else -> {
                         0
                     }
-                }
+                },
+                dayToPayInterest = 1
             )
         )
     }
@@ -191,37 +187,27 @@ fun getInitialNewsList(): List<News> {
 data class Perk(
     val name: String,
     val description: String,
+    val append: List<String>,
     var active: Boolean,
     val tier: Int,
     val icon: Int,
 )
 
 fun getInitialPerks(): List<Perk> {
-    val incomeTaxDescription = buildAnnotatedString {
-        append("Reduces the interest rates on your ")
-        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Yellow)) {
-            append("IncomeTax")
-        }
-        append(" loans by 5%.")
-    }
-    val bankInterestDescription = buildAnnotatedString {
-        append("Reduces the interest rates on your ")
-        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Yellow)) {
-            append("Bank loans")
-        }
-        append(" by 5%.")
-    }
+
     return listOf(
         Perk(
             name = "Income Tax",
-            description = incomeTaxDescription.text,
+            description = "Reduces the interest rates on your income tax by 5%.",
+            append = listOf("income tax","5%"),
             active = false,
             1,
             R.drawable.ratedown
         ),
         Perk(
             name = "Bank interest",
-            description = bankInterestDescription.text,
+            description = "Reduces the interest rate on your bank loans by 5%.",
+            append = listOf("interest rate","bank loans","5%"),
             active = false,
             1,
             R.drawable.ratedown
@@ -239,5 +225,5 @@ data class YearlySummary(
 )
 
 fun getIInitialYearlySummary(): List<YearlySummary> {
-    return emptyList<YearlySummary>()
+    return emptyList()
 }

@@ -1,12 +1,12 @@
 package com.example.stocksofpoverty.ui.game
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -88,7 +88,7 @@ fun StockMarketGame(
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
-    Update() {
+    Update {
         if (!paused.value) {
             update(stocks, date, player, news, logs, perks, yearlySummary, banks, format)
             if (date.value.day.value == 1 && date.value.month.value == 1) {
@@ -117,7 +117,7 @@ fun StockMarketGame(
         topBar = {
             TopAppBar(
                 title = {
-                    Row() {
+                    Row {
                         TopScreenIcons(
                             "Market",
                             selectedScreen,
@@ -150,29 +150,32 @@ fun StockMarketGame(
         }, bottomBar = {
             TopAppBar(
                 title = {
-                    Row() {
-                        AnimatedContent(
-                            player.value.balance.value,
-                            transitionSpec = {
-                                slideInVertically { -1000 } with fadeOut()
-                            }
+                    Row(
+                        modifier = Modifier
+                            .padding(40.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
                         ) {
-                            Spacer(modifier = Modifier.weight(1f))
-                            Column(
+                            AnimatedContent(
+                                player.value.balance.value, transitionSpec = {
+                                   slideIntoContainer(AnimatedContentScope.SlideDirection.Up) with
+                                           slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
+                                }
                             ) {
-                                Text(text = "Balance ${format.format(player.value.balance.value)}")
-                                Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
+                                Text(text = "$${format.format(it)}")
                             }
+                            Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         Button(onClick = { paused.value = !paused.value }) {
-                            Text(text = if (paused.value) "Resume" else "Pause")
-
+                            Text(text = if (paused.value) "Resume" else "Pause", fontSize = 10.sp)
                         }
                     }
                 }
             )
         }
+
     ) {
         Box(
             modifier = Modifier
@@ -194,11 +197,9 @@ fun StockMarketGame(
             ) {
                 PlayerUI(
                     player,
-                    selectedScreen,
                     perkPoint,
                     perks,
                     tier,
-                    banks,
                     format,
                     yearlySummary,
                     date,
@@ -211,7 +212,7 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                LogsUI(logs, date)
+                LogsUI(logs)
             }
             AnimatedVisibility(
                 selectedScreen.value == "Bank",
@@ -278,7 +279,6 @@ fun ShowStock(
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
-    val priceBoxColor = remember { mutableStateOf(Color.Green) }
     val buying = remember { mutableStateOf(false) }
     val selling = remember { mutableStateOf(false) }
     val sharesCount = remember { mutableStateOf(0) }
@@ -306,7 +306,7 @@ fun ShowStock(
             modifier = Modifier
                 .padding(10.dp)
         ) {
-            Row() {
+            Row {
                 Box(
                     modifier = Modifier
                         .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
@@ -355,7 +355,10 @@ fun ShowStock(
                 )
             }
             if (stock.shares.value > 0) {
-                Text(text = "${stock.shares.value} Shares at avg price of ${format.format(stock.averageBuyPrice.value)}", fontSize = 20.sp)
+                Text(
+                    text = "${stock.shares.value} Shares at avg price of ${format.format(stock.averageBuyPrice.value)}",
+                    fontSize = 20.sp
+                )
             }
             if (devMode) {
                 Text(text = "Demand ${format.format(stock.demand)} Supply ${format.format(stock.supply)}")
@@ -467,9 +470,9 @@ fun BuyingAndSelling(
             }
             Button(onClick = {
                 if (label == "Buy") {
-                    buyStock(stock, shareCount, player, date, logs, format,isBuyingOrSelling)
+                    buyStock(stock, shareCount, player, date, logs, format, isBuyingOrSelling)
                 } else {
-                    sellStock(stock, shareCount, player, date, logs, format,isBuyingOrSelling)
+                    sellStock(stock, shareCount, player, date, logs, format, isBuyingOrSelling)
                 }
 
             }) {

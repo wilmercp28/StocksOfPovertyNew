@@ -77,6 +77,7 @@ fun getLoan(
 ) {
     player.value.balance.value += bank.value.creditLimit.value
     bank.value.loanBalance.value += bank.value.creditLimit.value
+    bank.value.dayToPayInterest = date.value.day.value
     val log = Logs(getDateToString(date.value),"Took a loan from ${bank.value.name} for ${bank.value.creditLimit.value.toInt()}")
     logs.value += log
 }

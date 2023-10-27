@@ -25,14 +25,24 @@ fun taxAndInterest(
             taxRate -= 0.05
         }
     }
-    val amountToPay = income * taxRate
-    player.value.expectedIncomeTax.value = amountToPay
+    val amountToPayTax = income * taxRate
+    player.value.expectedIncomeTax.value = amountToPayTax
     if (date.value.day.value == 1 && date.value.month.value == 1 && date.value.year.value != 1) {
-        player.value.totalPaidTaxes.value += amountToPay
-        player.value.totalPaidTaxes.value += amountToPay
-        player.value.balance.value -= amountToPay
-        val logIncomeTax = Logs(getDateToString(date.value), "${format.format(amountToPay)} paid on income tax")
+        player.value.totalPaidTaxes.value += amountToPayTax
+        player.value.totalPaidTaxes.value += amountToPayTax
+        player.value.balance.value -= amountToPayTax
+        val logIncomeTax = Logs(getDateToString(date.value), "${format.format(amountToPayTax)} paid on income tax")
         logs.value += logIncomeTax
         player.value.yearProfit.value = 0.0
+    }
+
+    for (bank in banks.value){
+        if (bank.loanBalance.value != 0.0 && bank.dayToPayInterest == date.value.day.value){
+            val interest = (bank.interestRate / 100) * bank.loanBalance.value
+            val principal = 200
+            val amountToPay = interest + principal
+            player.value.balance.value -= amountToPay
+            bank.loanBalance.value -= principal
+        }
     }
 }

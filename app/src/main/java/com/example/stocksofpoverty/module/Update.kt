@@ -11,7 +11,6 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
 import java.text.DecimalFormat
-import kotlin.math.abs
 import kotlin.random.Random
 
 
@@ -31,7 +30,7 @@ fun update(
     updateYearlySummary(yearlySummary, date, player)
     taxAndInterest(player, banks, date, perks, logs, format)
     if (date.value.month.value % 4 == 0 && date.value.day.value == 1) {
-        updateNews(news, player, date, stocks)
+        updateNews(news,date,stocks)
     }
     applyMonthlyDemandChanges(stocks, date)
 }
@@ -41,12 +40,11 @@ fun applyMonthlyDemandChanges(stocks: MutableState<List<Stock>>, date: MutableSt
         for (stock in stocks.value) {
             if (stock.inEvent && stock.demandChangesList.isNotEmpty()) {
                 stock.demand += stock.demandChangesList.first()
-                Log.d(
-                    stock.name,
-                    "List ${stock.demandChangesList} Apply and Remove ${stock.demandChangesList.first()}"
-                )
                 stock.demandChangesList.remove(stock.demandChangesList.first())
                 if (stock.demandChangesList.isEmpty()) stock.inEvent = false
+            } else {
+                val randomDemand = Random.nextDouble(-4.0,5.0)
+                stock.demand += randomDemand
             }
         }
     }
@@ -54,7 +52,6 @@ fun applyMonthlyDemandChanges(stocks: MutableState<List<Stock>>, date: MutableSt
 
 fun updateNews(
     news: MutableState<List<News>>,
-    player: MutableState<Player>,
     date: MutableState<Date>,
     stocks: MutableState<List<Stock>>
 ) {
@@ -94,19 +91,27 @@ fun updateStockPrice(
     format: DecimalFormat
 ) {
     val priceSensitivity = 0.01
-    val supplySensitivity = 0.5
     for (stock in stocks.value) {
         getPercentageChange(date, stock, format)
-        val supplyDemandDif = stock.demand - stock.supply
-        val randomPriceIncrease = Random.nextDouble() * supplyDemandDif
-        val randomFluctuations = (Random.nextDouble() * 0.4) - 0.2
-        if (supplyDemandDif > 0) {
-            stock.price.value += randomPriceIncrease * priceSensitivity + randomFluctuations
-            stock.supply += randomPriceIncrease * supplySensitivity + randomFluctuations
-        } else if (supplyDemandDif < 0) {
-            stock.price.value -= abs(randomPriceIncrease * priceSensitivity) + randomFluctuations
-            stock.supply -= abs(randomPriceIncrease * supplySensitivity) + randomFluctuations
+
+        val supplyDemandDifference = stock.demand - stock.supply
+
+        val ratio = if (supplyDemandDifference != 0.0) {
+            supplyDemandDifference / 100.0
+        } else {
+         // In case is infinite
+            1.0
         }
+
+        // Introduce random fluctuation to the price change
+        val randomFluctuation = Random.nextDouble(-1.0, 1.0)
+
+        // Calculate price increase based on sensitivity, ratio, and random fluctuation
+        val priceIncrease = (stock.price.value * ratio * priceSensitivity) + randomFluctuation
+
+        // Update stock price and supply
+        stock.price.value += priceIncrease
+        stock.supply += priceIncrease
     }
 }
 
