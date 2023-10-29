@@ -59,7 +59,6 @@ data class SaveGame(
     val bank: List<Bank>,
     val news: List<News>,
     val logs: List<Logs>,
-    val tier: MutableState<Int>,
     val yearlySummary: List<YearlySummary>,
     val perk: List<Perk>
 )
@@ -93,7 +92,11 @@ data class Player(
     val totalDebt: MutableState<Double>,
     val totalInterestPaid: MutableState<Double>,
     val yearlyDebt: MutableState<Double>,
-    val yearlyInterestPaid: MutableState<Double>
+    val yearlyInterestPaid: MutableState<Double>,
+    var tier: MutableState<Int>,
+    var perkPoints: MutableState<Int>,
+    val advanceTierProfitRequirements: List<Double>,
+    val advanceTierBalanceRequirements:List<Double>
 )
 
 fun getInitialPlayer(): Player {
@@ -108,7 +111,11 @@ fun getInitialPlayer(): Player {
         mutableStateOf(0.0),
         mutableStateOf(0.0),
         mutableStateOf(0.0),
-        mutableStateOf(0.0)
+        mutableStateOf(0.0),
+        mutableStateOf(0),
+        mutableStateOf(0),
+        advanceTierProfitRequirements = listOf(10000.0,30000.0,60000.0,0.0),
+        advanceTierBalanceRequirements = listOf(20000.0,50000.0,70000.0,0.0)
     )
 }
 
@@ -125,7 +132,7 @@ data class Bank(
     val name: String,
     val slogan: String,
     val loanBalance: MutableState<Double>,
-    val interestRate: Double,
+    var interestRate: Double,
     val creditLimit: MutableState<Double>,
     val tierNeeded: Int,
     var dayToPayInterest: Int
@@ -199,17 +206,25 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Income Tax",
             description = "Reduces the interest rates on your income tax by 5%.",
-            append = listOf("income tax","5%"),
+            append = listOf("income tax", "5%"),
             active = false,
-            1,
+            2,
             R.drawable.ratedown
         ),
         Perk(
             name = "Bank interest",
             description = "Reduces the interest rate on your bank loans by 5%.",
-            append = listOf("interest rate","bank loans","5%"),
+            append = listOf("interest rate", "bank loans", "5%"),
             active = false,
-            1,
+            2,
+            R.drawable.ratedown
+        ),
+        Perk(
+            name = "Dividends",
+            description = "For each 100 shares, you receive dividends for 0.05% of the price ",
+            append = listOf("interest rate", "bank loans", "5%"),
+            active = false,
+            2,
             R.drawable.ratedown
         )
     )

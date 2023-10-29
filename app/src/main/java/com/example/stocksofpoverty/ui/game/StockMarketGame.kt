@@ -79,8 +79,6 @@ fun StockMarketGame(
     saveSlot: MutableState<Int>,
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
-    perkPoint: MutableState<Int>,
-    tier: MutableState<Int>,
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
     yearlySummary: MutableState<List<YearlySummary>>
@@ -102,7 +100,6 @@ fun StockMarketGame(
                             banks.value.toList(),
                             news.value.toList(),
                             logs.value.toList(),
-                            tier,
                             yearlySummary.value.toList(),
                             perks.value.toList()
                         ),
@@ -159,8 +156,8 @@ fun StockMarketGame(
                         ) {
                             AnimatedContent(
                                 player.value.balance.value, transitionSpec = {
-                                   slideIntoContainer(AnimatedContentScope.SlideDirection.Up) with
-                                           slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
+                                    slideIntoContainer(AnimatedContentScope.SlideDirection.Up) with
+                                            slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
                                 }
                             ) {
                                 Text(text = "$${format.format(it)}")
@@ -188,7 +185,7 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Stocks(stocks, player, devMode, date, logs)
+                Stocks(stocks, player, devMode, date, logs, perks)
             }
             AnimatedVisibility(
                 selectedScreen.value == "Player",
@@ -197,14 +194,14 @@ fun StockMarketGame(
             ) {
                 PlayerUI(
                     player,
-                    perkPoint,
                     perks,
-                    tier,
                     format,
                     yearlySummary,
                     date,
                     logs,
-                    devMode
+                    devMode,
+                    banks,
+                    news
                 )
             }
             AnimatedVisibility(
@@ -219,7 +216,7 @@ fun StockMarketGame(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                BanksUI(player, banks, date, logs, format, tier)
+                BanksUI(player, banks, date, logs, format,player)
             }
             AnimatedVisibility(
                 selectedScreen.value == "News",
@@ -254,7 +251,8 @@ fun Stocks(
     player: MutableState<Player>,
     devMode: Boolean,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>
+    logs: MutableState<List<Logs>>,
+    perks: MutableState<List<Perk>>
 ) {
     LazyColumn {
         items(stocks.value) { stock ->
@@ -264,7 +262,7 @@ fun Stocks(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                ShowStock(stock, devMode, player, date, logs)
+                ShowStock(stock, devMode, player, date, logs, perks)
             }
         }
     }
@@ -275,7 +273,8 @@ fun Stocks(
 fun ShowStock(
     stock: Stock, devMode: Boolean, player: MutableState<Player>,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>
+    logs: MutableState<List<Logs>>,
+    perks: MutableState<List<Perk>>
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
@@ -401,7 +400,8 @@ fun ShowStock(
                         player,
                         format,
                         date,
-                        logs
+                        logs,
+                        perks
                     )
                 }
                 AnimatedVisibility(selling.value) {
@@ -413,7 +413,8 @@ fun ShowStock(
                         player,
                         format,
                         date,
-                        logs
+                        logs,
+                        perks
                     )
                 }
             }
@@ -431,14 +432,12 @@ fun BuyingAndSelling(
     player: MutableState<Player>,
     format: DecimalFormat,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>
+    logs: MutableState<List<Logs>>,
+    perks: MutableState<List<Perk>>
 ) {
     val profitLosses = remember(stock.price.value, shareCount.value) {
         format.format(
-            getProfitLosses(
-                shareCount,
-                stock
-            )
+            getProfitLosses(shareCount, stock)
         ).toDouble()
     }
     val isLosingMoney = remember(profitLosses) { profitLosses < 0 }
@@ -470,9 +469,27 @@ fun BuyingAndSelling(
             }
             Button(onClick = {
                 if (label == "Buy") {
-                    buyStock(stock, shareCount, player, date, logs, format, isBuyingOrSelling)
+                    buyStock(
+                        stock,
+                        shareCount,
+                        player,
+                        date,
+                        logs,
+                        format,
+                        isBuyingOrSelling,
+                        perks
+                    )
                 } else {
-                    sellStock(stock, shareCount, player, date, logs, format, isBuyingOrSelling)
+                    sellStock(
+                        stock,
+                        shareCount,
+                        player,
+                        date,
+                        logs,
+                        format,
+                        isBuyingOrSelling,
+                        perks
+                    )
                 }
 
             }) {
@@ -484,6 +501,11 @@ fun BuyingAndSelling(
                 }
             }
         }
+        if (shareCount.value != 0 && label == "Sell") {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(text = "Total ${format.format(stock.price.value * shareCount.value)}")
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -491,14 +513,17 @@ fun BuyingAndSelling(
             horizontalArrangement = Arrangement.Center
         ) {
             if (shareCount.value != 0 && label == "Sell") {
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = if (isLosingMoney) "Losing " else "Gaining ",
                     color = if (isLosingMoney) Color.Red else Color.Green
                 )
                 Text(text = "${abs(profitLosses)}")
             } else if (shareCount.value != 0 && label == "Buy") {
-                Text(text = "Total Price ${format.format(stock.price.value * shareCount.value)}")
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center)
+                { Text(text = "Total Price ${format.format(stock.price.value * shareCount.value)}") }
             }
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

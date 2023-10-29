@@ -43,7 +43,7 @@ fun BanksUI(
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
     format: DecimalFormat,
-    tier: MutableState<Int>
+    player1: MutableState<Player>
 ) {
     val isShowingBank = remember { mutableStateOf(false) }
     val showingBank = remember { mutableStateOf(banks.value[0]) }
@@ -63,7 +63,7 @@ fun BanksUI(
                 verticalArrangement = Arrangement.Center,
                 content = {
                     items(banks.value) { bank ->
-                        BankList(bank, tier, format, isShowingBank, showingBank)
+                        BankList(bank, format, isShowingBank, showingBank,player)
                     }
                 }
             )
@@ -74,13 +74,13 @@ fun BanksUI(
 @Composable
 fun BankList(
     bank: Bank,
-    tier: MutableState<Int>,
     format: DecimalFormat,
     isShowingBank: MutableState<Boolean>,
-    showingBank: MutableState<Bank>
+    showingBank: MutableState<Bank>,
+    player: MutableState<Player>
 ) {
     val boxColor =
-        if (bank.tierNeeded <= tier.value) MaterialTheme.colorScheme.primary else Color.Gray
+        if (bank.tierNeeded <= player.value.tier.value) MaterialTheme.colorScheme.primary else Color.Gray
     Column(
         modifier = Modifier
             .size(200.dp)
@@ -96,7 +96,7 @@ fun BankList(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (bank.tierNeeded <= tier.value) {
+        if (bank.tierNeeded <= player.value.tier.value) {
             if (bank.loanBalance.value == 0.0) {
                 Text(text = bank.name, textAlign = TextAlign.Center, fontSize = 20.sp)
                 Text(text = "Credit limit ${bank.creditLimit.value}", textAlign = TextAlign.Center)

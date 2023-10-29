@@ -31,10 +31,8 @@ fun startNewGame(
     startGame: MutableState<Boolean>,
     stocks: MutableState<List<Stock>>,
     dataStore: DataStore<Preferences>,
-    perkPoint: MutableState<Int>,
     perks: MutableState<List<Perk>>,
     banks: MutableState<List<Bank>>,
-    tier: MutableState<Int>,
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
     yearlySummary: MutableState<List<YearlySummary>>
@@ -42,10 +40,8 @@ fun startNewGame(
     player.value = getInitialPlayer()
     date.value = getInitialDate()
     stocks.value = getInitialStockList()
-    perkPoint.value = 1
     perks.value = getInitialPerks()
     banks.value = getInitialBanks()
-    tier.value = 0
     news.value = getInitialNewsList()
     logs.value = getInitialLog()
     GlobalScope.launch {
@@ -58,7 +54,6 @@ fun startNewGame(
             banks.value,
             news.value,
             logs.value,
-            tier,
             yearlySummary.value.toList(),
             perks.value.toList()
         )

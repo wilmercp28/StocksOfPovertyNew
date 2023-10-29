@@ -70,8 +70,6 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val logs = remember { mutableStateOf(getInitialLog()) }
     val banks = remember { mutableStateOf(getInitialBanks()) }
     val news = remember { mutableStateOf(getInitialNewsList()) }
-    val perkPoint = remember { mutableStateOf(1) }
-    val tier = remember { mutableStateOf(0) }
     val perks = remember { mutableStateOf(getInitialPerks()) }
     val yearlySummary = remember { mutableStateOf(getIInitialYearlySummary()) }
     val format = DecimalFormat("#.##")
@@ -90,8 +88,6 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             saveSlot,
             banks,
             news,
-            perkPoint,
-            tier,
             logs,
             perks,
             yearlySummary
@@ -105,12 +101,10 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             startGame,
             dataStore,
             loadingGame,
-            perkPoint,
             perks,
             banks,
             news,
             logs,
-            tier,
             yearlySummary,
             devMode
         )
@@ -270,12 +264,10 @@ fun MainMenuUI(
     startGame: MutableState<Boolean>,
     dataStore: DataStore<Preferences>,
     loadingGame: MutableState<Boolean>,
-    perkPoint: MutableState<Int>,
     perks: MutableState<List<Perk>>,
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
-    tier: MutableState<Int>,
     yearlySummary: MutableState<List<YearlySummary>>,
     devMode: MutableState<Boolean>
 ) {
@@ -295,10 +287,8 @@ fun MainMenuUI(
                 startGame,
                 stocks,
                 dataStore,
-                perkPoint,
                 perks,
                 banks,
-                tier,
                 news,
                 logs,
                 yearlySummary
