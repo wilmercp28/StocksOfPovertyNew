@@ -23,17 +23,35 @@ fun update(
     perks: MutableState<List<Perk>>,
     yearlySummary: MutableState<List<YearlySummary>>,
     banks: MutableState<List<Bank>>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    gameLost: MutableState<Boolean>
 ) {
     updateStockPrice(stocks, date, format)
     updateDate(date)
     updateYearlySummary(yearlySummary, date, player)
     taxAndInterest(player, banks, date, perks, logs, format)
     if (date.value.month.value % 4 == 0 && date.value.day.value == 1) {
-        updateNews(news,date,stocks)
+        updateNews(news, date, stocks)
     }
     applyMonthlyDemandChanges(stocks, date)
+    if (date.value.day.value == 1 && date.value.month.value == 1) {
+        checkWinnerLoser(player, banks, logs, stocks,gameLost)
+    }
 }
+
+
+fun checkWinnerLoser(
+    player: MutableState<Player>,
+    banks: MutableState<List<Bank>>,
+    logs: MutableState<List<Logs>>,
+    stocks: MutableState<List<Stock>>,
+    gameLost: MutableState<Boolean>
+) {
+    if (player.value.balance.value < 0.0) {
+        avoidNegativeBalance(player,banks,logs,stocks,gameLost)
+    }
+}
+
 
 fun applyMonthlyDemandChanges(stocks: MutableState<List<Stock>>, date: MutableState<Date>) {
     if (date.value.day.value == 1) {
@@ -43,7 +61,7 @@ fun applyMonthlyDemandChanges(stocks: MutableState<List<Stock>>, date: MutableSt
                 stock.demandChangesList.remove(stock.demandChangesList.first())
                 if (stock.demandChangesList.isEmpty()) stock.inEvent = false
             } else {
-                val randomDemand = Random.nextDouble(-4.0,5.0)
+                val randomDemand = Random.nextDouble(-4.0, 5.0)
                 stock.demand += randomDemand
             }
         }
@@ -79,7 +97,8 @@ fun updateYearlySummary(
             player.value.totalDebt.value,
             player.value.yearlyInterestPaid.value,
             player.value.yearProfit.value,
-            player.value.expectedIncomeTax.value
+            player.value.expectedIncomeTax.value,
+            player.value.yearlySpend.value
         )
         yearlySummary.value += summary
     }
@@ -99,7 +118,7 @@ fun updateStockPrice(
         val ratio = if (supplyDemandDifference != 0.0) {
             supplyDemandDifference / 100.0
         } else {
-         // In case is infinite
+            // In case is infinite
             1.0
         }
 
@@ -120,7 +139,8 @@ fun getPercentageChange(date: MutableState<Date>, stock: Stock, format: DecimalF
         stock.lastYearPrice.value = stock.price.value
     }
     stock.percentageChange.value =
-        format.format(((stock.price.value - stock.lastYearPrice.value) / stock.lastYearPrice.value) * 100).toDouble()
+        format.format(((stock.price.value - stock.lastYearPrice.value) / stock.lastYearPrice.value) * 100)
+            .toDouble()
 }
 
 fun updateDate(date: MutableState<Date>) {

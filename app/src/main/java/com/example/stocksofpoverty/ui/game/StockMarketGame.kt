@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.example.stocksofpoverty.R
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
@@ -81,14 +82,16 @@ fun StockMarketGame(
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
-    yearlySummary: MutableState<List<YearlySummary>>
+    yearlySummary: MutableState<List<YearlySummary>>,
+    achievements: MutableState<Achievements>,
+    gameLost: MutableState<Boolean>
 ) {
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
     Update {
         if (!paused.value) {
-            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format)
+            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format,gameLost)
             if (date.value.day.value == 1 && date.value.month.value == 1) {
                 coroutine.launch {
                     saveGame(
@@ -110,120 +113,128 @@ fun StockMarketGame(
             }
         }
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row {
-                        TopScreenIcons(
-                            "Market",
-                            selectedScreen,
-                            R.drawable.financialprofit
-                        )
-                        TopScreenIcons(
-                            "Player",
-                            selectedScreen,
-                            R.drawable.user
-                        )
-                        TopScreenIcons(
-                            "Bank",
-                            selectedScreen,
-                            R.drawable.bank
-                        )
-                        TopScreenIcons(
-                            "News",
-                            selectedScreen,
-                            R.drawable.newspaper
-                        )
-                        TopScreenIcons(
-                            "Logs",
-                            selectedScreen,
-                            R.drawable.logs
-                        )
-                    }
+    if (gameLost.value) {
+        GameLostMenu()
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row {
+                            TopScreenIcons(
+                                "Market",
+                                selectedScreen,
+                                R.drawable.financialprofit
+                            )
+                            TopScreenIcons(
+                                "Player",
+                                selectedScreen,
+                                R.drawable.user
+                            )
+                            TopScreenIcons(
+                                "Bank",
+                                selectedScreen,
+                                R.drawable.bank
+                            )
+                            TopScreenIcons(
+                                "News",
+                                selectedScreen,
+                                R.drawable.newspaper
+                            )
+                            TopScreenIcons(
+                                "Logs",
+                                selectedScreen,
+                                R.drawable.logs
+                            )
+                        }
 
-                }
-            )
-        }, bottomBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier
-                            .padding(40.dp)
-                    ) {
-                        Column(
+                    }
+                )
+            }, bottomBar = {
+                TopAppBar(
+                    title = {
+                        Row(
                             modifier = Modifier
+                                .padding(40.dp)
                         ) {
-                            AnimatedContent(
-                                player.value.balance.value, transitionSpec = {
-                                    slideIntoContainer(AnimatedContentScope.SlideDirection.Up) with
-                                            slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
-                                }
+                            Column(
+                                modifier = Modifier
                             ) {
-                                Text(text = "$${format.format(it)}")
+                                AnimatedContent(
+                                    player.value.balance.value, transitionSpec = {
+                                        slideIntoContainer(AnimatedContentScope.SlideDirection.Up) with
+                                                slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
+                                    }
+                                ) {
+                                    Text(text = "$${format.format(it)}")
+                                }
+                                Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
                             }
-                            Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(onClick = { paused.value = !paused.value }) {
-                            Text(text = if (paused.value) "Resume" else "Pause", fontSize = 10.sp)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Button(onClick = { paused.value = !paused.value }) {
+                                Text(
+                                    text = if (paused.value) "Resume" else "Pause",
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
-                }
-            )
-        }
-
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it),
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedVisibility(
-                selectedScreen.value == "Market",
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Stocks(stocks, player, devMode, date, logs, perks)
-            }
-            AnimatedVisibility(
-                selectedScreen.value == "Player",
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                PlayerUI(
-                    player,
-                    perks,
-                    format,
-                    yearlySummary,
-                    date,
-                    logs,
-                    devMode,
-                    banks,
-                    news
                 )
             }
-            AnimatedVisibility(
-                selectedScreen.value == "Logs",
-                enter = fadeIn(),
-                exit = fadeOut()
+
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
+                contentAlignment = Alignment.Center
             ) {
-                LogsUI(logs)
-            }
-            AnimatedVisibility(
-                selectedScreen.value == "Bank",
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                BanksUI(player, banks, date, logs, format,player)
-            }
-            AnimatedVisibility(
-                selectedScreen.value == "News",
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                NewsUI(news)
+                AnimatedVisibility(
+                    selectedScreen.value == "Market",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Stocks(stocks, player, devMode, date, logs, perks)
+                }
+                AnimatedVisibility(
+                    selectedScreen.value == "Player",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    PlayerUI(
+                        player,
+                        perks,
+                        format,
+                        yearlySummary,
+                        date,
+                        logs,
+                        devMode,
+                        banks,
+                        news,
+                        achievements
+                    )
+                }
+                AnimatedVisibility(
+                    selectedScreen.value == "Logs",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    LogsUI(logs)
+                }
+                AnimatedVisibility(
+                    selectedScreen.value == "Bank",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    BanksUI(player, banks, date, logs, format, player)
+                }
+                AnimatedVisibility(
+                    selectedScreen.value == "News",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    NewsUI(news)
+                }
             }
         }
     }

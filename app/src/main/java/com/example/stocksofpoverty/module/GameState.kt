@@ -3,6 +3,7 @@ package com.example.stocksofpoverty.module
 import androidx.compose.runtime.MutableState
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
@@ -12,6 +13,7 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.getInitialAchievements
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
@@ -35,7 +37,8 @@ fun startNewGame(
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
-    yearlySummary: MutableState<List<YearlySummary>>
+    yearlySummary: MutableState<List<YearlySummary>>,
+    achievements: MutableState<Achievements>
 ) {
     player.value = getInitialPlayer()
     date.value = getInitialDate()
@@ -59,6 +62,7 @@ fun startNewGame(
         )
         saveGame(saveGame, dataStore, saveSlot.value)
         startGame.value = true
+        achievements.value = getInitialAchievements()
 
     }
 }

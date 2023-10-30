@@ -2,6 +2,7 @@ package com.example.stocksofpoverty.ui.game
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
@@ -40,6 +42,7 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.data.formatNumberToK
 import com.example.stocksofpoverty.module.activatePerk
+import com.example.stocksofpoverty.module.checkAllAchievements
 import com.example.stocksofpoverty.module.tierCompleted
 import java.text.DecimalFormat
 
@@ -54,7 +57,8 @@ fun PlayerUI(
     logs: MutableState<List<Logs>>,
     devMode: Boolean,
     banks: MutableState<List<Bank>>,
-    news: MutableState<List<News>>
+    news: MutableState<List<News>>,
+    achievements: MutableState<Achievements>
 ) {
     val selectedPerk = remember { mutableStateOf(perks.value[0]) }
     val showAlert = remember { mutableStateOf(false) }
@@ -67,11 +71,9 @@ fun PlayerUI(
             activatePerk(selectedPerk.value, showAlert, logs, date, player, news, banks)
         })
     }
-    val balanceAchievementReach = remember { mutableStateOf(false) }
-    val profitAchievementReach = remember { mutableStateOf(false) }
     var indexForGoals = remember { mutableStateOf(0) }
-    if (balanceAchievementReach.value && profitAchievementReach.value) {
-        tierCompleted(balanceAchievementReach, profitAchievementReach, player)
+    if (checkAllAchievements(achievements)) {
+        tierCompleted(player,indexForGoals,achievements)
     }
     LazyColumn(
         modifier = Modifier
@@ -93,11 +95,19 @@ fun PlayerUI(
                         else -> ""
                     }, fontSize = 20.sp
                 )
+                Text(text = "Next tier")
                 ProgressIndicatorLinear(
                     "Balance",
                     player.value.balance.value,
-                    player.value.advanceTierBalanceRequirements,
-                    balanceAchievementReach,
+                    achievements.value.advanceTierBalanceRequirements.first,
+                    achievements.value.advanceTierBalanceRequirements.second,
+                    indexForGoals
+                )
+                ProgressIndicatorLinear(
+                    "Profit",
+                    player.value.totalProfit.value,
+                    achievements.value.advanceTierProfitRequirements.first,
+                    achievements.value.advanceTierProfitRequirements.second,
                     indexForGoals
                 )
             }
@@ -106,7 +116,7 @@ fun PlayerUI(
             Text(text = "Personal Finances", fontSize = 20.sp)
             if (player.value.perkPoints.value > 0) {
                 Text(
-                    text = "Available perk points ${player.value.perkPoints}",
+                    text = "Available perk points ${player.value.perkPoints.value}",
                     color = Color.Yellow
                 )
             }
@@ -117,6 +127,9 @@ fun PlayerUI(
                 Button(onClick = { player.value.balance.value += 1000 }) {
                     Text(text = "Money Up")
                 }
+                Button(onClick = { player.value.totalProfit.value += 1000 }) {
+                    Text(text = "Profit Up")
+                }
             }
         }
         item {
@@ -126,14 +139,20 @@ fun PlayerUI(
             ) {
                 Text(text = "Perks", fontSize = 40.sp)
                 Divider()
-                Text(text = "Tier I")
-                PerkTierColumn(1, perks.value.filter { it.tier == 1 }, selectedPerk, showAlert)
+                if (player.value.tier.value == 1) {
+                    Text(text = "Tier I")
+                    PerkTierColumn(1, perks.value.filter { it.tier == 1 }, selectedPerk, showAlert)
+                }
                 Divider()
-                Text(text = "Tier II")
-                PerkTierColumn(2, perks.value.filter { it.tier == 2 }, selectedPerk, showAlert)
+                if (player.value.tier.value == 2) {
+                    Text(text = "Tier II")
+                    PerkTierColumn(2, perks.value.filter { it.tier == 2 }, selectedPerk, showAlert)
+                }
                 Divider()
-                Text(text = "Tier III")
-                PerkTierColumn(3, perks.value.filter { it.tier == 3 }, selectedPerk, showAlert)
+                if (player.value.tier.value == 3) {
+                    Text(text = "Tier III")
+                    PerkTierColumn(3, perks.value.filter { it.tier == 3 }, selectedPerk, showAlert)
+                }
             }
         }
         item {
@@ -162,9 +181,11 @@ fun ProgressIndicatorLinear(
     title: String,
     currentAmount: Double,
     goals: List<Double>,
-    completedAchievement: MutableState<Boolean>,
+    completed: MutableState<Boolean>,
     index: MutableState<Int>
 ) {
+
+
     if (goals[index.value] == 0.0) {
         Text(text = "All achievements for $title Completed")
     } else
@@ -183,9 +204,10 @@ fun ProgressIndicatorLinear(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp)
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Text(text = title)
                 Spacer(modifier = Modifier.weight(1f))
                 LinearProgressIndicator(progress = progress.toFloat())
@@ -195,7 +217,7 @@ fun ProgressIndicatorLinear(
             Box() {
                 if (progress >= 1) {
                     Text(text = "Completed")
-                    completedAchievement.value = true
+                    completed.value = true
                 }
             }
         }
@@ -333,5 +355,6 @@ fun YearlySummaryUI(
         }
         Text(text = "Total Debt ${format.format(yearlySummary.debt)}")
         Text(text = "Interest paid ${format.format(yearlySummary.interestPaid)}")
+        Text(text = "Total Spend ${format.format(player.value.yearlySpend.value)}")
     }
 }

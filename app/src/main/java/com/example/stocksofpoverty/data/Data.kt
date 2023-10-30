@@ -91,14 +91,18 @@ data class Player(
     val expectedIncomeTax: MutableState<Double>,
     val totalDebt: MutableState<Double>,
     val totalInterestPaid: MutableState<Double>,
+    val yearlySpend: MutableState<Double>,
     val yearlyDebt: MutableState<Double>,
     val yearlyInterestPaid: MutableState<Double>,
     var tier: MutableState<Int>,
     var perkPoints: MutableState<Int>,
-    val advanceTierProfitRequirements: List<Double>,
-    val advanceTierBalanceRequirements:List<Double>
 )
+data class Achievements(
+    var currentIndex: Int,
+    var advanceTierProfitRequirements: Pair<List<Double>, MutableState<Boolean>>,
+    var advanceTierBalanceRequirements: Pair<List<Double>, MutableState<Boolean>>
 
+        )
 fun getInitialPlayer(): Player {
     return Player(
         "Player",
@@ -112,10 +116,22 @@ fun getInitialPlayer(): Player {
         mutableStateOf(0.0),
         mutableStateOf(0.0),
         mutableStateOf(0.0),
+        mutableStateOf(0.0),
         mutableStateOf(0),
         mutableStateOf(0),
-        advanceTierProfitRequirements = listOf(10000.0,30000.0,60000.0,0.0),
-        advanceTierBalanceRequirements = listOf(20000.0,50000.0,70000.0,0.0)
+    )
+}
+fun getInitialAchievements(): Achievements {
+    return Achievements(
+        currentIndex = 0,
+        advanceTierBalanceRequirements = Pair(
+            listOf(10000.0, 30000.0, 60000.0, 0.0),
+            mutableStateOf(false)
+        ),
+        advanceTierProfitRequirements = Pair(
+            listOf(20000.0, 40000.0, 70000.0, 0.0),
+            mutableStateOf(false)
+        )
     )
 }
 
@@ -204,7 +220,39 @@ fun getInitialPerks(): List<Perk> {
 
     return listOf(
         Perk(
+            name = "Hidden Bank Account",
+            description = "Receive a one time sum of money for 10000",
+            append = listOf("one","time","1000"),
+            active = false,
+            1,
+            R.drawable.cashperk
+        ),
+        Perk(
+            name = "Cash Back",
+            description = "Get 1% cash back for all your stocks buys (Maximum 500)",
+            append = listOf("1%","cash","back","500"),
+            active = false,
+            1,
+            R.drawable.cashbackperk
+        ),
+        Perk(
+            name = "Super overdraft",
+            description = "Can go until -20000 without going bankrupt",
+            append = listOf("-20000","bankrupt"),
+            active = false,
+            1,
+            R.drawable.card
+        ),
+        Perk(
             name = "Income Tax",
+            description = "Reduces the interest rates on your income tax by 5%.",
+            append = listOf("income tax", "5%"),
+            active = false,
+            2,
+            R.drawable.ratedown
+        ),
+        Perk(
+            name = "empty",
             description = "Reduces the interest rates on your income tax by 5%.",
             append = listOf("income tax", "5%"),
             active = false,
@@ -221,10 +269,25 @@ fun getInitialPerks(): List<Perk> {
         ),
         Perk(
             name = "Dividends",
-            description = "For each 100 shares, you receive dividends for 0.05% of the price ",
-            append = listOf("interest rate", "bank loans", "5%"),
+            description = "For each 100 shares, you receive dividends for 0.05% of the stock price",
+            append = listOf("100","shares","dividends","0.05","price"),
             active = false,
-            2,
+            3,
+            R.drawable.ratedown
+        ),
+        Perk(
+            name = "Gift from a stranger",
+            description = "An unknown person send you some shares, 100 to be precise. (From a random stock)",
+            append = listOf("100","random"),
+            active = false,
+            3,
+            R.drawable.anonymity
+        ), Perk(
+            name = "empty",
+            description = "For each 100 shares, you receive dividends for 0.05% of the stock price",
+            append = listOf("100","shares","dividends","0.05","price"),
+            active = false,
+            3,
             R.drawable.ratedown
         )
     )
@@ -236,7 +299,8 @@ data class YearlySummary(
     val debt: Double,
     val interestPaid: Double,
     val profit: Double,
-    val incomeTax: Double
+    val incomeTax: Double,
+    val spend: Double
 )
 
 fun getIInitialYearlySummary(): List<YearlySummary> {

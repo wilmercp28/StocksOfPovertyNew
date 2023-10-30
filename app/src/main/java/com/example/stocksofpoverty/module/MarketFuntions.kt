@@ -20,14 +20,14 @@ fun buyStock(
 ) {
     val totalPrice = stock.price.value * shareCount.value
     if (totalPrice < player.value.balance.value && shareCount.value != 0) {
-        if (perks.value[3].active){
-            player.value.balance.value -= totalPrice - getExtraProfit(stock.price.value,10.0)
-        } else {
-            player.value.balance.value -= totalPrice
-        }
+        player.value.balance.value -= totalPrice
         stock.averageBuyPrice.value = getAverageBuyPrice(stock, shareCount, totalPrice)
         stock.shares.value += shareCount.value
-        val log = Logs(getDateToString(date.value),"Bought ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} ")
+        player.value.yearlySpend.value += totalPrice
+        val log = Logs(
+            getDateToString(date.value),
+            "Bought ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} "
+        )
         logs.value += log
         shareCount.value = 0
         isBuyingOrSelling.value = false
@@ -57,13 +57,19 @@ fun sellStock(
     if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
         player.value.yearProfit.value += getProfitLosses(shareCount, stock)
         player.value.totalProfit.value += getProfitLosses(shareCount, stock)
-        if (perks.value[2].active){
-            player.value.balance.value += shareCount.value * stock.price.value + getExtraProfit(stock.price.value,10.0)
+        if (perks.value[2].active) {
+            player.value.balance.value += shareCount.value * stock.price.value + getExtraProfit(
+                stock.price.value,
+                10.0
+            )
         } else {
             player.value.balance.value += shareCount.value * stock.price.value
         }
         stock.shares.value -= shareCount.value
-        val log = Logs(getDateToString(date.value),"Sold ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} ")
+        val log = Logs(
+            getDateToString(date.value),
+            "Sold ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} "
+        )
         logs.value += log
         shareCount.value = 0
         isBuyingOrSelling.value = false
@@ -80,6 +86,7 @@ fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock): Double {
     val difference = totalIfSellOut - totalInvested
     return difference * shareCount.value
 }
+
 fun getExtraProfit(
     value: Double,
     percentage: Double
@@ -89,6 +96,7 @@ fun getExtraProfit(
     val formattedValue = format.format(value * percentageRatio)
     return formattedValue.toDouble()
 }
+
 fun getLoan(
     bank: MutableState<Bank>,
     player: MutableState<Player>,
@@ -98,11 +106,15 @@ fun getLoan(
     player.value.balance.value += bank.value.creditLimit.value
     bank.value.loanBalance.value += bank.value.creditLimit.value
     bank.value.dayToPayInterest = date.value.day.value
-    val log = Logs(getDateToString(date.value),"Took a loan from ${bank.value.name} for ${bank.value.creditLimit.value.toInt()}")
+    val log = Logs(
+        getDateToString(date.value),
+        "Took a loan from ${bank.value.name} for ${bank.value.creditLimit.value.toInt()}"
+    )
     logs.value += log
 }
+
 fun payoffLoan(bank: MutableState<Bank>, player: MutableState<Player>) {
-    if (player.value.balance.value >= bank.value.loanBalance.value){
+    if (player.value.balance.value >= bank.value.loanBalance.value) {
         player.value.balance.value -= bank.value.loanBalance.value
         bank.value.loanBalance.value = 0.0
     }

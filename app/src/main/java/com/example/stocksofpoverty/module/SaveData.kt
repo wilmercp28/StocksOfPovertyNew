@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
@@ -85,6 +86,8 @@ fun loadSave(
     logs: MutableState<List<Logs>>,
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
+    achievements: MutableState<Achievements>,
+    gameLost: MutableState<Boolean>,
 ) {
     stocks.value = saveGame.stock
     player.value = saveGame.player

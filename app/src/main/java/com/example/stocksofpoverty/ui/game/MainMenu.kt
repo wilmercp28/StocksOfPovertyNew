@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
@@ -48,6 +49,7 @@ import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.data.getIInitialYearlySummary
+import com.example.stocksofpoverty.data.getInitialAchievements
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
@@ -64,6 +66,8 @@ import java.text.DecimalFormat
 
 @Composable
 fun MainMenu(dataStore: DataStore<Preferences>) {
+    val gameLost = remember { mutableStateOf(false) }
+    val achievements = remember { mutableStateOf(getInitialAchievements()) }
     val stocks = remember { mutableStateOf(getInitialStockList()) }
     val player = remember { mutableStateOf(getInitialPlayer()) }
     val date = remember { mutableStateOf(getInitialDate()) }
@@ -90,7 +94,9 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             news,
             logs,
             perks,
-            yearlySummary
+            yearlySummary,
+            achievements,
+            gameLost
         )
     } else if (!loadingGame.value) {
         MainMenuUI(
@@ -106,7 +112,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             news,
             logs,
             yearlySummary,
-            devMode
+            devMode,
+            achievements
         )
     } else if (!startGame.value && loadingGame.value) {
         LoadGameUI(dataStore, loadingGame) { saveGame ->
@@ -120,7 +127,9 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
                 loadingGame,
                 logs,
                 banks,
-                news
+                news,
+                achievements,
+                gameLost
             )
         }
     }
@@ -269,7 +278,8 @@ fun MainMenuUI(
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
     yearlySummary: MutableState<List<YearlySummary>>,
-    devMode: MutableState<Boolean>
+    devMode: MutableState<Boolean>,
+    achievements: MutableState<Achievements>
 ) {
     Column(
         modifier = Modifier
@@ -291,7 +301,8 @@ fun MainMenuUI(
                 banks,
                 news,
                 logs,
-                yearlySummary
+                yearlySummary,
+                achievements
             )
         }) {
             Text(text = "New Game", fontSize = 20.sp)
