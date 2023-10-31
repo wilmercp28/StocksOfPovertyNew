@@ -84,7 +84,8 @@ fun StockMarketGame(
     perks: MutableState<List<Perk>>,
     yearlySummary: MutableState<List<YearlySummary>>,
     achievements: MutableState<Achievements>,
-    gameLost: MutableState<Boolean>
+    gameLost: MutableState<Boolean>,
+    startGame: MutableState<Boolean>
 ) {
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
@@ -146,6 +147,11 @@ fun StockMarketGame(
                                 selectedScreen,
                                 R.drawable.logs
                             )
+                            TopScreenIcons(
+                                "Options Menu",
+                                selectedScreen,
+                                R.drawable.menu
+                            )
                         }
 
                     }
@@ -166,7 +172,17 @@ fun StockMarketGame(
                                                 slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
                                     }
                                 ) {
-                                    Text(text = "$${format.format(it)}")
+                                    Text(text = "$${format.format(it)}", color =
+                                    if (player.value.balance.value < -20000 && perks.value[2].active){
+                                        Color.Red
+                                    } else if (player.value.balance.value < 0 && perks.value[2].active){
+                                        Color.Yellow
+                                    } else if (player.value.balance.value < 0 && !perks.value[2].active){
+                                        Color.Red
+                                    }
+                                    else {
+                                        Color.Green
+                                    })
                                 }
                                 Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
                             }
@@ -211,7 +227,8 @@ fun StockMarketGame(
                         devMode,
                         banks,
                         news,
-                        achievements
+                        achievements,
+                        stocks
                     )
                 }
                 AnimatedVisibility(
@@ -234,6 +251,13 @@ fun StockMarketGame(
                     exit = fadeOut()
                 ) {
                     NewsUI(news)
+                }
+                AnimatedVisibility(
+                    selectedScreen.value == "Options Menu",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    OptionsMenu(startGame,player,banks,news,logs,yearlySummary,saveSlot,stocks,date,perks,dataStore,paused)
                 }
             }
         }
@@ -369,6 +393,15 @@ fun ShowStock(
                     text = "${stock.shares.value} Shares at avg price of ${format.format(stock.averageBuyPrice.value)}",
                     fontSize = 20.sp
                 )
+                if (stock.shares.value >= 100 && perks.value[6].active){
+                    val yearlyDividends = remember(stock.price.value,stock.shares.value) {
+                        mutableStateOf((stock.shares.value * stock.price.value) * 0.05)
+                    }
+                    Text(
+                        text = "Yearly Dividends ${format.format(yearlyDividends.value)}",
+                        fontSize = 20.sp
+                    )
+                }
             }
             if (devMode) {
                 Text(text = "Demand ${format.format(stock.demand)} Supply ${format.format(stock.supply)}")

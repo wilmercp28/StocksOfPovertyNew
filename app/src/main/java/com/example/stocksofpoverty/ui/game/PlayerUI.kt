@@ -39,6 +39,7 @@ import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
+import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.data.formatNumberToK
 import com.example.stocksofpoverty.module.activatePerk
@@ -58,7 +59,8 @@ fun PlayerUI(
     devMode: Boolean,
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
-    achievements: MutableState<Achievements>
+    achievements: MutableState<Achievements>,
+    stocks: MutableState<List<Stock>>
 ) {
     val selectedPerk = remember { mutableStateOf(perks.value[0]) }
     val showAlert = remember { mutableStateOf(false) }
@@ -68,7 +70,7 @@ fun PlayerUI(
         .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
     if (showAlert.value) {
         PerkAlert(selectedPerk, showAlert, onConfirm = { perk ->
-            activatePerk(selectedPerk.value, showAlert, logs, date, player, news, banks)
+            activatePerk(selectedPerk.value, showAlert, logs, date, player, news, banks,stocks)
         })
     }
     var indexForGoals = remember { mutableStateOf(0) }
@@ -124,10 +126,18 @@ fun PlayerUI(
                 Button(onClick = { player.value.tier.value += 1 }) {
                     Text(text = "Tier Up")
                 }
-                Button(onClick = { player.value.balance.value += 1000 }) {
-                    Text(text = "Money Up")
+                Row() {
+                    Button(onClick = { player.value.balance.value -= 1000 }) {
+                        Text(text = "Money Down")
+                    }
+                    Button(onClick = { player.value.balance.value += 1000 }) {
+                        Text(text = "Money Up")
+                    }
                 }
-                Button(onClick = { player.value.totalProfit.value += 1000 }) {
+                Button(onClick = {
+                    player.value.totalProfit.value += 1000
+                    player.value.yearProfit.value += 1000
+                }) {
                     Text(text = "Profit Up")
                 }
             }
@@ -139,17 +149,17 @@ fun PlayerUI(
             ) {
                 Text(text = "Perks", fontSize = 40.sp)
                 Divider()
-                if (player.value.tier.value == 1) {
+                if (player.value.tier.value >= 1) {
                     Text(text = "Tier I")
                     PerkTierColumn(1, perks.value.filter { it.tier == 1 }, selectedPerk, showAlert)
                 }
                 Divider()
-                if (player.value.tier.value == 2) {
+                if (player.value.tier.value >= 2) {
                     Text(text = "Tier II")
                     PerkTierColumn(2, perks.value.filter { it.tier == 2 }, selectedPerk, showAlert)
                 }
                 Divider()
-                if (player.value.tier.value == 3) {
+                if (player.value.tier.value >= 3) {
                     Text(text = "Tier III")
                     PerkTierColumn(3, perks.value.filter { it.tier == 3 }, selectedPerk, showAlert)
                 }

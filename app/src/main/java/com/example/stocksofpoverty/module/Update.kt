@@ -29,13 +29,13 @@ fun update(
     updateStockPrice(stocks, date, format)
     updateDate(date)
     updateYearlySummary(yearlySummary, date, player)
-    taxAndInterest(player, banks, date, perks, logs, format)
+    taxAndInterest(player, banks, date, perks, logs, format,stocks)
     if (date.value.month.value % 4 == 0 && date.value.day.value == 1) {
         updateNews(news, date, stocks)
     }
     applyMonthlyDemandChanges(stocks, date)
     if (date.value.day.value == 1 && date.value.month.value == 1) {
-        checkWinnerLoser(player, banks, logs, stocks,gameLost)
+        checkWinnerLoser(player, banks, logs, stocks,gameLost,date,perks)
     }
 }
 
@@ -45,10 +45,14 @@ fun checkWinnerLoser(
     banks: MutableState<List<Bank>>,
     logs: MutableState<List<Logs>>,
     stocks: MutableState<List<Stock>>,
-    gameLost: MutableState<Boolean>
+    gameLost: MutableState<Boolean>,
+    date: MutableState<Date>,
+    perks: MutableState<List<Perk>>
 ) {
-    if (player.value.balance.value < 0.0) {
-        avoidNegativeBalance(player,banks,logs,stocks,gameLost)
+    if (player.value.balance.value < 0.0 && !perks.value[2].active) {
+        avoidNegativeBalance(player,banks,logs,stocks,gameLost,date)
+    } else if (player.value.balance.value < -20000 && perks.value[2].active){
+        avoidNegativeBalance(player,banks,logs,stocks,gameLost,date)
     }
 }
 

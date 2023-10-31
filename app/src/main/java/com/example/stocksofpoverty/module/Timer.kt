@@ -11,7 +11,7 @@ fun Update(
     LaunchedEffect(Unit) {
         while (true) {
             update()
-            delay(100)
+            delay(400)
         }
     }
 }

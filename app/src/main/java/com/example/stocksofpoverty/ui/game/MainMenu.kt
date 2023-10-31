@@ -2,6 +2,7 @@ package com.example.stocksofpoverty.ui.game
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,19 +26,26 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.R
 import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
@@ -96,7 +104,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             perks,
             yearlySummary,
             achievements,
-            gameLost
+            gameLost,
+            startGame
         )
     } else if (!loadingGame.value) {
         MainMenuUI(
@@ -180,9 +189,9 @@ fun LoadGameUI(
                         if (saveGamesList.isNotEmpty()) {
                             item {
                                 Button(onClick = {
-                                    for (saveGames in saveGamesList){
+                                    for (saveGames in saveGamesList) {
                                         coroutine.launch {
-                                            removeSaveGame(dataStore,saveGames.saveSlot)
+                                            removeSaveGame(dataStore, saveGames.saveSlot)
                                             triggerRecomposition.value = !triggerRecomposition.value
                                         }
                                     }
@@ -242,6 +251,7 @@ fun ShowSaveGame(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(text = saveGame.player.name)
         Text(text = "${saveGame.player.name} Balance ${saveGame.player.balance.value}")
         Text(text = "Day ${saveGame.date.day.value} Month ${saveGame.date.month.value} Year ${saveGame.date.year.value}")
         AnimatedVisibility(expanded.value) {
@@ -264,6 +274,7 @@ fun ShowSaveGame(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuUI(
     stocks: MutableState<List<Stock>>,
@@ -281,40 +292,83 @@ fun MainMenuUI(
     devMode: MutableState<Boolean>,
     achievements: MutableState<Achievements>
 ) {
+    var selectingName by remember { mutableStateOf(false)}
+    Image(
+        painter = painterResource(R.drawable.stonksbackground),
+        contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = Modifier
+            .fillMaxSize()
+    )
     Column(
         modifier = Modifier
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Welcome To Stock Of Poverty", fontSize = 25.sp)
         Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = {
-            startNewGame(
-                saveSlot,
-                player,
-                date,
-                startGame,
-                stocks,
-                dataStore,
-                perks,
-                banks,
-                news,
-                logs,
-                yearlySummary,
-                achievements
-            )
-        }) {
-            Text(text = "New Game", fontSize = 20.sp)
+        Text(
+            text = "Welcome\n\nTo\n\nStock Of Poverty",
+            fontSize = 40.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        if (selectingName){
+            var nameText by remember { mutableStateOf("") }
+            Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextField(
+                    value = nameText,
+                    onValueChange = {nameText = it},
+                    placeholder = { Text(text = "Player Name")}
+                )
+                Row(
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = {selectingName = false}) {
+                        Text(text = "Cancel")
+                    }
+                    Button(onClick = {
+                        player.value.name = nameText
+                        startNewGame(
+                            saveSlot,
+                            player,
+                            date,
+                            startGame,
+                            stocks,
+                            dataStore,
+                            perks,
+                            banks,
+                            news,
+                            logs,
+                            yearlySummary,
+                            achievements
+                        )
+                    }) {
+                        Text(text = "Confirm")
+                    }
+                }
+            }
         }
-        Button(onClick = {
-            loadingGame.value = true
-        }) {
-            Text(text = "Load", fontSize = 20.sp)
+        if (!selectingName) {
+            Button(onClick = {
+                selectingName = true
+            }) {
+                Text(text = "New Game", fontSize = 20.sp)
+            }
+            Button(onClick = {
+                loadingGame.value = true
+            }) {
+                Text(text = "Load", fontSize = 20.sp)
+            }
         }
-        Button(onClick = { devMode.value = !devMode.value },
+        Button(
+            onClick = { devMode.value = !devMode.value },
         ) {
-            Text(text = if (devMode.value) "Dev Mode On" else "Dev Mode off",)
+            Text(text = if (devMode.value) "Dev Mode On" else "Dev Mode off")
         }
+        Spacer(modifier = Modifier.weight(1f))
     }
 }

@@ -82,7 +82,7 @@ fun getInitialDate(): Date {
 }
 
 data class Player(
-    val name: String,
+    var name: String,
     val balance: MutableState<Double>,
     val yearProfit: MutableState<Double>,
     val totalProfit: MutableState<Double>,
@@ -220,9 +220,9 @@ fun getInitialPerks(): List<Perk> {
 
     return listOf(
         Perk(
-            name = "Hidden Bank Account",
+            name = "Hidden\nBank Account",
             description = "Receive a one time sum of money for 10000",
-            append = listOf("one","time","1000"),
+            append = listOf("one","time","10000"),
             active = false,
             1,
             R.drawable.cashperk
@@ -237,8 +237,8 @@ fun getInitialPerks(): List<Perk> {
         ),
         Perk(
             name = "Super overdraft",
-            description = "Can go until -20000 without going bankrupt",
-            append = listOf("-20000","bankrupt"),
+            description = "Can go until -20000 without going bankrupt, but has to pay 4% on late fees monthly",
+            append = listOf("-20000","bankrupt","10%","fees","monthly"),
             active = false,
             1,
             R.drawable.card
@@ -252,12 +252,12 @@ fun getInitialPerks(): List<Perk> {
             R.drawable.ratedown
         ),
         Perk(
-            name = "empty",
-            description = "Reduces the interest rates on your income tax by 5%.",
-            append = listOf("income tax", "5%"),
+            name = "Part time\njob",
+            description = "Work a part time job, get $100 monthly",
+            append = listOf("$100","monthly"),
             active = false,
             2,
-            R.drawable.ratedown
+            R.drawable.parttimejobperk
         ),
         Perk(
             name = "Bank interest",
@@ -277,8 +277,8 @@ fun getInitialPerks(): List<Perk> {
         ),
         Perk(
             name = "Gift from a stranger",
-            description = "An unknown person send you some shares, 100 to be precise. (From a random stock)",
-            append = listOf("100","random"),
+            description = "An unknown person send you some shares, 100 to be precise, from 3 different stocks (From a random stock)",
+            append = listOf("100","random","3","random"),
             active = false,
             3,
             R.drawable.anonymity

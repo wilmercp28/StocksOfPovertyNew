@@ -24,11 +24,16 @@ fun annotateRecursively(
         val startIndex = originalText.indexOf(placeHolder, ignoreCase = true)
         if (startIndex != -1) {
             val endIndex = startIndex + placeHolder.length
-            builder.addStyle(style = SpanStyle(color = Color.Yellow), start = startIndex, end = endIndex)
+            builder.addStyle(
+                style = SpanStyle(color = Color.Yellow),
+                start = startIndex,
+                end = endIndex
+            )
         }
     }
     return builder.toAnnotatedString()
 }
+
 @Composable
 fun PerkAlert(
     perk: MutableState<Perk>,
@@ -70,5 +75,30 @@ fun PerkAlert(
             }
         }
     )
+}
 
+@Composable
+fun LeaveBeforeSavingAlert(
+    showAlert: MutableState<Boolean>,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = {
+            showAlert.value = false
+        },
+        title = {
+            Text(text = "Save Before Leaving?")
+        },
+        confirmButton = {
+            Button(onClick = {onConfirm()}) {
+                Text(text = "Yes" )
+            }
+        },
+        dismissButton = {
+            Button(onClick = {onDismiss()}) {
+                Text(text = "No")
+            }
+        }
+    )
 }
