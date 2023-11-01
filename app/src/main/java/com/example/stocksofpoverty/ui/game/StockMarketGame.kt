@@ -5,9 +5,11 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,9 +23,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,9 +36,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,7 +100,7 @@ fun StockMarketGame(
     val coroutine = rememberCoroutineScope()
     Update {
         if (!paused.value) {
-            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format,gameLost)
+            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format, gameLost)
             if (date.value.day.value == 1 && date.value.month.value == 1) {
                 coroutine.launch {
                     saveGame(
@@ -172,17 +180,18 @@ fun StockMarketGame(
                                                 slideOutOfContainer(AnimatedContentScope.SlideDirection.Down)
                                     }
                                 ) {
-                                    Text(text = "$${format.format(it)}", color =
-                                    if (player.value.balance.value < -20000 && perks.value[2].active){
-                                        Color.Red
-                                    } else if (player.value.balance.value < 0 && perks.value[2].active){
-                                        Color.Yellow
-                                    } else if (player.value.balance.value < 0 && !perks.value[2].active){
-                                        Color.Red
-                                    }
-                                    else {
-                                        Color.Green
-                                    })
+                                    Text(
+                                        text = "$${format.format(it)}", color =
+                                        if (player.value.balance.value < -20000 && perks.value[2].active) {
+                                            Color.Red
+                                        } else if (player.value.balance.value < 0 && perks.value[2].active) {
+                                            Color.Yellow
+                                        } else if (player.value.balance.value < 0 && !perks.value[2].active) {
+                                            Color.Red
+                                        } else {
+                                            Color.Green
+                                        }
+                                    )
                                 }
                                 Text(text = "Day ${date.value.day.value} Month ${date.value.month.value} Year ${date.value.year.value}")
                             }
@@ -210,7 +219,7 @@ fun StockMarketGame(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    Stocks(stocks, player, devMode, date, logs, perks)
+                    Stocks(stocks, player, devMode, date, logs, perks, format)
                 }
                 AnimatedVisibility(
                     selectedScreen.value == "Player",
@@ -257,7 +266,20 @@ fun StockMarketGame(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    OptionsMenu(startGame,player,banks,news,logs,yearlySummary,saveSlot,stocks,date,perks,dataStore,paused)
+                    OptionsMenu(
+                        startGame,
+                        player,
+                        banks,
+                        news,
+                        logs,
+                        yearlySummary,
+                        saveSlot,
+                        stocks,
+                        date,
+                        perks,
+                        dataStore,
+                        paused
+                    )
                 }
             }
         }
@@ -280,6 +302,7 @@ fun TopScreenIcons(iconName: String, selectedScreen: MutableState<String>, Icon:
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Stocks(
     stocks: MutableState<List<Stock>>,
@@ -287,21 +310,92 @@ fun Stocks(
     devMode: Boolean,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    perks: MutableState<List<Perk>>
+    perks: MutableState<List<Perk>>,
+    format: DecimalFormat
 ) {
-    LazyColumn {
-        items(stocks.value) { stock ->
-            Box(
-                modifier = Modifier
-                    .padding(5.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                ShowStock(stock, devMode, player, date, logs, perks)
+    val sortBy = remember { mutableStateOf("Name") }
+    val ascendant = remember { mutableStateOf(true) }
+    Column(
+        modifier = Modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            SortByTabs("Name", sortBy, ascendant)
+            SortByTabs("Price", sortBy, ascendant)
+            SortByTabs("Category", sortBy, ascendant)
+            SortByTabs("Shares Own", sortBy, ascendant)
+            SortByTabs("Change", sortBy, ascendant)
+        }
+        val sortedStocks = remember(sortBy.value, ascendant.value, date.value.day.value) {
+            mutableStateOf(
+                stocks.value.sortedWith(compareBy { stock ->
+                    when (sortBy.value) {
+                        "Name" -> stock.name
+                        "Price" -> stock.price.value
+                        "Category" -> stock.category
+                        "Shares Own" -> stock.shares.value
+                        "Change" -> stock.percentageChange.value
+                        else -> stock.name
+                    }
+                }).let {
+                    if (!ascendant.value) it.reversed() else it
+                }
+            )
+        }
+        LazyColumn(
+            modifier = Modifier,
+        ) {
+            items(sortedStocks.value, key = {it.name}) { stock ->
+                Box(
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .fillMaxWidth()
+                        .animateItemPlacement(
+                            tween(1000)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ShowStock(stock, devMode, player, date, logs, perks)
+                }
             }
         }
     }
+}
 
+
+@Composable
+fun SortByTabs(
+    sortBy: String,
+    sortByState: MutableState<String>,
+    ascendant: MutableState<Boolean>
+) {
+    Column(
+        modifier = Modifier
+            .size(90.dp)
+    ) {
+        Tab(
+            selected = sortBy == sortByState.value,
+            onClick = {
+                if (sortBy != sortByState.value) {
+                    sortByState.value = sortBy
+                } else ascendant.value = !ascendant.value
+            },
+            selectedContentColor = Color.Yellow,
+            unselectedContentColor = Color.Gray
+        ) {
+            Row() {
+                Text(text = sortBy, fontSize = 12.sp)
+                if (sortBy == sortByState.value && ascendant.value) {
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Sort ascendant")
+                } else if (sortBy == sortByState.value && !ascendant.value) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Sort descendant")
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -393,8 +487,8 @@ fun ShowStock(
                     text = "${stock.shares.value} Shares at avg price of ${format.format(stock.averageBuyPrice.value)}",
                     fontSize = 20.sp
                 )
-                if (stock.shares.value >= 100 && perks.value[6].active){
-                    val yearlyDividends = remember(stock.price.value,stock.shares.value) {
+                if (stock.shares.value >= 100 && perks.value[6].active) {
+                    val yearlyDividends = remember(stock.price.value, stock.shares.value) {
                         mutableStateOf((stock.shares.value * stock.price.value) * 0.05)
                     }
                     Text(

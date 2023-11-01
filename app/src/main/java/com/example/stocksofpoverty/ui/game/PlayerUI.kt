@@ -69,7 +69,7 @@ fun PlayerUI(
         .padding(20.dp)
         .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
     if (showAlert.value) {
-        PerkAlert(selectedPerk, showAlert, onConfirm = { perk ->
+        PerkAlert(selectedPerk, showAlert, onConfirm = {
             activatePerk(selectedPerk.value, showAlert, logs, date, player, news, banks,stocks)
         })
     }
@@ -123,6 +123,12 @@ fun PlayerUI(
                 )
             }
             if (devMode) {
+                Button(onClick = {
+                    date.value.day.value = 29
+                    date.value.month.value = 12
+                }) {
+                    Text(text = "Skip Year")
+                }
                 Button(onClick = { player.value.tier.value += 1 }) {
                     Text(text = "Tier Up")
                 }
