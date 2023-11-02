@@ -23,9 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -36,18 +34,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -315,21 +314,37 @@ fun Stocks(
 ) {
     val sortBy = remember { mutableStateOf("Name") }
     val ascendant = remember { mutableStateOf(true) }
+    val autoSorting = remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(text = "Sort By", fontSize = 15.sp)
+        Text(text = "Auto Sort", fontSize = 10.sp)
+        Switch(
+            checked = autoSorting.value,
+            onCheckedChange = {autoSorting.value = it},
+            modifier = Modifier
+                .scale(0.5f)
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SortByTabs("Name", sortBy, ascendant)
-            SortByTabs("Price", sortBy, ascendant)
-            SortByTabs("Category", sortBy, ascendant)
-            SortByTabs("Shares Own", sortBy, ascendant)
-            SortByTabs("Change", sortBy, ascendant)
+            val listOfSorts = listOf("Name","Price","Category","Share","Change")
+            for (sorts in listOfSorts){
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    SortByTabs(sorts, sortBy, ascendant)
+                }
+            }
         }
-        val sortedStocks = remember(sortBy.value, ascendant.value, date.value.day.value) {
+        val sortedStocks = remember(sortBy.value, ascendant.value,if (autoSorting.value)date.value.day.value else {}) {
             mutableStateOf(
                 stocks.value.sortedWith(compareBy { stock ->
                     when (sortBy.value) {
@@ -358,7 +373,7 @@ fun Stocks(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    ShowStock(stock, devMode, player, date, logs, perks)
+                    ShowStock(stock, devMode, player, date, logs, perks,autoSorting)
                 }
             }
         }
@@ -374,7 +389,6 @@ fun SortByTabs(
 ) {
     Column(
         modifier = Modifier
-            .size(90.dp)
     ) {
         Tab(
             selected = sortBy == sortByState.value,
@@ -386,8 +400,11 @@ fun SortByTabs(
             selectedContentColor = Color.Yellow,
             unselectedContentColor = Color.Gray
         ) {
-            Row() {
-                Text(text = sortBy, fontSize = 12.sp)
+            Row(
+                modifier = Modifier
+                    .padding(20.dp)
+            ) {
+                Text(text = sortBy, fontSize = 9.sp)
                 if (sortBy == sortByState.value && ascendant.value) {
                     Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Sort ascendant")
                 } else if (sortBy == sortByState.value && !ascendant.value) {
@@ -403,7 +420,8 @@ fun ShowStock(
     stock: Stock, devMode: Boolean, player: MutableState<Player>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    perks: MutableState<List<Perk>>
+    perks: MutableState<List<Perk>>,
+    autoSorting: MutableState<Boolean>
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
@@ -414,6 +432,7 @@ fun ShowStock(
     val techIcon = painterResource(R.drawable.stocktechicon)
     val financeIcon = painterResource(R.drawable.stockfianceicon)
     val energyIcon = painterResource(R.drawable.stockfianceicon)
+    val initialAutoSorting = remember { mutableStateOf(autoSorting.value) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -425,6 +444,12 @@ fun ShowStock(
             )
             .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
             .clickable {
+                if (!expanded.value){
+                    initialAutoSorting.value = autoSorting.value
+                    autoSorting.value = false
+                } else {
+                    autoSorting.value = initialAutoSorting.value
+                }
                 expanded.value = !expanded.value
                 sharesCount.value = 0
             },
