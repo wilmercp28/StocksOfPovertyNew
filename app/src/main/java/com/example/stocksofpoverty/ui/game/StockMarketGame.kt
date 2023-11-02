@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,10 +28,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -43,7 +45,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -66,14 +67,14 @@ import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
 import com.example.stocksofpoverty.module.Update
-import com.example.stocksofpoverty.module.buyStock
+import com.example.stocksofpoverty.module.executeMarketOrder
 import com.example.stocksofpoverty.module.getProfitLosses
+import com.example.stocksofpoverty.module.howManyShareAfford
 import com.example.stocksofpoverty.module.saveGame
-import com.example.stocksofpoverty.module.sellStock
+import com.example.stocksofpoverty.module.totalForBuying
 import com.example.stocksofpoverty.module.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -324,7 +325,7 @@ fun Stocks(
         Text(text = "Auto Sort", fontSize = 10.sp)
         Switch(
             checked = autoSorting.value,
-            onCheckedChange = {autoSorting.value = it},
+            onCheckedChange = { autoSorting.value = it },
             modifier = Modifier
                 .scale(0.5f)
         )
@@ -334,8 +335,8 @@ fun Stocks(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val listOfSorts = listOf("Name","Price","Category","Share","Change")
-            for (sorts in listOfSorts){
+            val listOfSorts = listOf("Name", "Price", "Category", "Share", "Change")
+            for (sorts in listOfSorts) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -344,7 +345,12 @@ fun Stocks(
                 }
             }
         }
-        val sortedStocks = remember(sortBy.value, ascendant.value,if (autoSorting.value)date.value.day.value else {}) {
+        val sortedStocks = remember(
+            sortBy.value,
+            ascendant.value,
+            if (autoSorting.value) date.value.day.value else {
+            }
+        ) {
             mutableStateOf(
                 stocks.value.sortedWith(compareBy { stock ->
                     when (sortBy.value) {
@@ -363,7 +369,7 @@ fun Stocks(
         LazyColumn(
             modifier = Modifier,
         ) {
-            items(sortedStocks.value, key = {it.name}) { stock ->
+            items(sortedStocks.value, key = { it.name }) { stock ->
                 Box(
                     modifier = Modifier
                         .padding(5.dp)
@@ -373,7 +379,7 @@ fun Stocks(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    ShowStock(stock, devMode, player, date, logs, perks,autoSorting)
+                    ShowStock(stock, devMode, player, date, logs, perks, autoSorting)
                 }
             }
         }
@@ -425,8 +431,7 @@ fun ShowStock(
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
-    val buying = remember { mutableStateOf(false) }
-    val selling = remember { mutableStateOf(false) }
+    val marketOrder = remember { mutableStateOf(false) }
     val sharesCount = remember { mutableStateOf(0) }
     val pharmaIcon = painterResource(R.drawable.stockfarmaicon)
     val techIcon = painterResource(R.drawable.stocktechicon)
@@ -444,13 +449,13 @@ fun ShowStock(
             )
             .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
             .clickable {
-                if (!expanded.value){
+                if (!expanded.value) {
                     initialAutoSorting.value = autoSorting.value
                     autoSorting.value = false
                 } else {
                     autoSorting.value = initialAutoSorting.value
                 }
-                expanded.value = !expanded.value
+                expanded.value = true
                 sharesCount.value = 0
             },
     ) {
@@ -535,158 +540,307 @@ fun ShowStock(
                     .padding(5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AnimatedVisibility(!buying.value && !selling.value) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(onClick = { buying.value = true }) {
-                            Text(text = "Buy")
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        if (stock.shares.value != 0) {
-                            Button(onClick = { selling.value = true }) {
-                                Text(text = "Sell")
-                            }
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
-                AnimatedVisibility(buying.value) {
-                    BuyingAndSelling(
-                        "Buy",
-                        sharesCount,
-                        buying,
-                        stock,
-                        player,
-                        format,
-                        date,
-                        logs,
-                        perks
-                    )
-                }
-                AnimatedVisibility(selling.value) {
-                    BuyingAndSelling(
-                        "Sell",
-                        sharesCount,
-                        selling,
-                        stock,
-                        player,
-                        format,
-                        date,
-                        logs,
-                        perks
-                    )
+                if (marketOrder.value) Text(text = "Market order")
+            }
+            val typeOfOrders = listOf("Market Order", "Limit Order")
+            val selectedOrder = remember { mutableStateOf(typeOfOrders[0]) }
+            MarketOrderUI(
+                typeOfOrders,
+                selectedOrder,
+                sharesCount,
+                stock,
+                player,
+                format,
+                expanded,
+                logs,
+                date
+            )
+        }
+    }
+}
+
+@Composable
+fun MarketOrderUI(
+    typeOfOrders: List<String>,
+    selectedOrder: MutableState<String>,
+    sharesCount: MutableState<Int>,
+    stock: Stock,
+    player: MutableState<Player>,
+    format: DecimalFormat,
+    expanded: MutableState<Boolean>,
+    logs: MutableState<List<Logs>>,
+    date: MutableState<Date>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp)
+            .border(1.dp, MaterialTheme.colorScheme.primary),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Type Of Order")
+        Row(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.Center
+        ) {
+
+            for (order in typeOfOrders) {
+                Column(
+                    modifier = Modifier
+                        .padding(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(text = order)
+                    RadioButton(
+                        selected = selectedOrder.value == order,
+                        onClick = { selectedOrder.value = order })
                 }
             }
         }
+        AnimatedVisibility(selectedOrder.value == typeOfOrders[0]) {
+            val buying = remember { mutableStateOf(true) }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                BuyingOrSellingMarkerOrderUI(buying, stock)
+                GainingOrLosingUI(player, stock, sharesCount, format, buying)
+                ShareCountsMenu(sharesCount, stock, buying, player)
+                ExecuteOrCancelOrderUI(
+                    selectedOrder,
+                    buying,
+                    expanded,
+                    sharesCount,
+                    logs,
+                    date,
+                    stock,
+                    player,
+                    format
+                )
+            }
+        }
+        AnimatedVisibility(selectedOrder.value == typeOfOrders[1]) {
+            val buying = remember { mutableStateOf(true) }
+            val type = listOf("Date", "Percentage Change", "Price")
+            val selectedType = remember { mutableStateOf(type[0]) }
+            val dropMenuExpand = remember { mutableStateOf(false) }
+            val selectedDate = remember { mutableStateOf(date) }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                BuyingOrSellingMarkerOrderUI(buying, stock)
+                Button(onClick = { dropMenuExpand.value = !dropMenuExpand.value }) {
+                    Text(text = selectedType.value)
+                    LimitOrderDropDownMenu(type, selectedType, dropMenuExpand)
+                }
+                ShareCountsMenu(sharesCount, stock, buying, player)
+                when(selectedType.value){
+                    "Date" -> DateSelectorUI(date)
+                }
+                    ExecuteOrCancelOrderUI(
+                        selectedOrder,
+                        buying,
+                        expanded,
+                        sharesCount,
+                        logs,
+                        date,
+                        stock,
+                        player,
+                        format
+                    )
+            }
+        }
     }
+}
+
+@Composable
+fun DateSelectorUI(date: MutableState<Date>) {
+    val day = remember { mutableStateOf(Pair(date.value.day.value,"Day"),) }
+    val month = remember { mutableStateOf(Pair(date.value.month.value,"Month")) }
+    val year = remember { mutableStateOf(Pair(date.value.year.value,"Year")) }
+    val dates = listOf(day,month,year)
+    
+    Row {
+        for (date in dates){
+            DateDetails(date)
+        }
+    }
+}
+@Composable
+fun DateDetails(
+    date: MutableState<Pair<Int, String>>
+) {
+    Column(
+        modifier = Modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        IconButton(onClick = {
+            if (date.value.second == "Day"){
+                if (date.value.first < 31){
+                    date.value.first += 1
+                }
+            }
+        }
+        ) {
+
+        }
+        Text(text = date.value.second)
+        Text(text = date.value.first.toString())
+    }
+    
+}
+
+@Composable
+fun LimitOrderDropDownMenu(
+    type: List<String>,
+    selectedType: MutableState<String>,
+    dropMenuExpand: MutableState<Boolean>
+) {
+    DropdownMenu(
+        expanded = dropMenuExpand.value,
+        onDismissRequest = { dropMenuExpand.value = false }) {
+        for (typeName in type) {
+            DropdownMenuItem(
+                text = { Text(text = typeName) },
+                onClick = {
+                    selectedType.value = typeName
+                    dropMenuExpand.value = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ExecuteOrCancelOrderUI(
+    selectedOrder: MutableState<String>,
+    buying: MutableState<Boolean>,
+    expanded: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    logs: MutableState<List<Logs>>,
+    date: MutableState<Date>,
+    stock: Stock,
+    player: MutableState<Player>,
+    format: DecimalFormat
+) {
+
+    Row(
+
+    ) {
+        Button(onClick = {
+            expanded.value = false
+            sharesCount.value = 0
+        }) {
+            Text(text = "Cancel Order")
+        }
+        Button(onClick = {
+            executeMarketOrder(
+                selectedOrder,
+                buying,
+                sharesCount,
+                logs,
+                date,
+                stock,
+                player,
+                format
+            )
+        }) {
+            Text(text = "Execute Order")
+        }
+    }
+
 
 }
 
 @Composable
-fun BuyingAndSelling(
-    label: String,
-    shareCount: MutableState<Int>,
-    isBuyingOrSelling: MutableState<Boolean>,
+fun ShareCountsMenu(
+    sharesCount: MutableState<Int>,
     stock: Stock,
-    player: MutableState<Player>,
-    format: DecimalFormat,
-    date: MutableState<Date>,
-    logs: MutableState<List<Logs>>,
-    perks: MutableState<List<Perk>>
+    buying: MutableState<Boolean>,
+    player: MutableState<Player>
 ) {
-    val profitLosses = remember(stock.price.value, shareCount.value) {
-        format.format(
-            getProfitLosses(shareCount, stock)
-        ).toDouble()
-    }
-    val isLosingMoney = remember(profitLosses) { profitLosses < 0 }
-    Column {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Shares")
+        Text(text = sharesCount.value.toString())
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            Button(onClick = { isBuyingOrSelling.value = false }) {
-                Text(text = "Cancel")
+            Button(onClick = { if (sharesCount.value >= 5) sharesCount.value -= 5 }) {
+                Text(text = "-5")
             }
-            IconButton(onClick = {
-                if (shareCount.value != 0) {
-                    shareCount.value--
-                }
-            }) {
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares--")
+            Button(onClick = { if (sharesCount.value >= 1) sharesCount.value -= 1 }) {
+                Text(text = "-1")
             }
-            Text(text = shareCount.value.toString())
-            IconButton(onClick = {
-                if (label == "Sell" && shareCount.value < stock.shares.value) {
-                    shareCount.value++
-                } else if (label == "Buy") {
-                    shareCount.value++
-                }
-            }) {
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Shares++")
+            Button(onClick = { if (buying.value) sharesCount.value += 1 else if (sharesCount.value < stock.shares.value) sharesCount.value += 5 }) {
+                Text(text = "+1")
             }
+            Button(onClick = { if (buying.value) sharesCount.value += 5 else if (sharesCount.value < stock.shares.value) sharesCount.value += 5 }) {
+                Text(text = "+5")
+            }
+        }
+        if (sharesCount.value > 0) {
+            Button(onClick = { sharesCount.value = 0 }) {
+                Text(text = "Reset")
+            }
+        } else {
             Button(onClick = {
-                if (label == "Buy") {
-                    buyStock(
-                        stock,
-                        shareCount,
-                        player,
-                        date,
-                        logs,
-                        format,
-                        isBuyingOrSelling,
-                        perks
-                    )
+                if (buying.value) {
+                    howManyShareAfford(player, stock, sharesCount)
                 } else {
-                    sellStock(
-                        stock,
-                        shareCount,
-                        player,
-                        date,
-                        logs,
-                        format,
-                        isBuyingOrSelling,
-                        perks
-                    )
+                    sharesCount.value = stock.shares.value
                 }
-
             }) {
-                if (label == "Sell") {
-                    Text(text = if (shareCount.value == 0) "Sell all" else "Sell")
-                }
-                if (label == "Buy") {
-                    Text(text = if (shareCount.value == 0) "Max" else "Buy")
-                }
+                Text(text = "Max")
             }
         }
-        if (shareCount.value != 0 && label == "Sell") {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(text = "Total ${format.format(stock.price.value * shareCount.value)}")
-            }
+    }
+}
+
+@Composable
+fun BuyingOrSellingMarkerOrderUI(buying: MutableState<Boolean>, stock: Stock) {
+    Row(horizontalArrangement = Arrangement.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "Buy")
+            RadioButton(selected = buying.value, onClick = { buying.value = true })
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (shareCount.value != 0 && label == "Sell") {
-                Spacer(modifier = Modifier.weight(1f))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "Sell")
+            RadioButton(
+                selected = !buying.value, onClick = { buying.value = false },
+                enabled = stock.shares.value > 0
+            )
+        }
+    }
+}
+
+@Composable
+fun GainingOrLosingUI(
+    player: MutableState<Player>,
+    stock: Stock,
+    sharesCount: MutableState<Int>,
+    format: DecimalFormat,
+    buying: MutableState<Boolean>
+) {
+    if (sharesCount.value != 0) {
+        Text(text = "Total ${totalForBuying(stock, sharesCount, format)}")
+        if (!buying.value) {
+            val profitLoses = getProfitLosses(sharesCount, stock, format)
+            if (profitLoses.toDouble() >= 0) {
                 Text(
-                    text = if (isLosingMoney) "Losing " else "Gaining ",
-                    color = if (isLosingMoney) Color.Red else Color.Green
+                    text = "Gaining ${getProfitLosses(sharesCount, stock, format)}",
+                    color = Color.Green
                 )
-                Text(text = "${abs(profitLosses)}")
-            } else if (shareCount.value != 0 && label == "Buy") {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center)
-                { Text(text = "Total Price ${format.format(stock.price.value * shareCount.value)}") }
+            } else {
+                Text(
+                    text = "Losing ${getProfitLosses(sharesCount, stock, format)}",
+                    color = Color.Red
+                )
             }
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

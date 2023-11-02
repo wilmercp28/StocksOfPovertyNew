@@ -14,9 +14,7 @@ fun buyStock(
     stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    format: DecimalFormat,
-    isBuyingOrSelling: MutableState<Boolean>,
-    perks: MutableState<List<Perk>>
+    format: DecimalFormat
 ) {
     val totalPrice = stock.price.value * shareCount.value
     if (totalPrice < player.value.balance.value && shareCount.value != 0) {
@@ -30,11 +28,18 @@ fun buyStock(
         )
         logs.value += log
         shareCount.value = 0
-        isBuyingOrSelling.value = false
     } else {
-        val howManyCanAfford = player.value.balance.value / stock.price.value
-        shareCount.value = howManyCanAfford.toInt()
+        howManyShareAfford(player, stock, shareCount)
     }
+}
+
+fun totalForBuying(stock: Stock, sharesCount: MutableState<Int>, format: DecimalFormat): String {
+    return format.format(stock.price.value * sharesCount.value)
+}
+
+fun howManyShareAfford(player: MutableState<Player>, stock: Stock, sharesCount: MutableState<Int>) {
+    val howManySharesCanAfford = (player.value.balance.value / stock.price.value).toInt()
+    sharesCount.value = howManySharesCanAfford
 }
 
 fun getAverageBuyPrice(stock: Stock, shareCount: MutableState<Int>, totalPrice: Double): Double {
@@ -50,21 +55,12 @@ fun sellStock(
     player: MutableState<Player>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    format: DecimalFormat,
-    isBuyingOrSelling: MutableState<Boolean>,
-    perks: MutableState<List<Perk>>
+    format: DecimalFormat
 ) {
     if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
-        player.value.yearProfit.value += getProfitLosses(shareCount, stock)
-        player.value.totalProfit.value += getProfitLosses(shareCount, stock)
-        if (perks.value[2].active) {
-            player.value.balance.value += shareCount.value * stock.price.value + getExtraProfit(
-                stock.price.value,
-                10.0
-            )
-        } else {
-            player.value.balance.value += shareCount.value * stock.price.value
-        }
+        player.value.yearProfit.value += getProfitLosses(shareCount, stock, format).toDouble()
+        player.value.totalProfit.value += getProfitLosses(shareCount, stock, format).toDouble()
+        player.value.balance.value += shareCount.value * stock.price.value
         stock.shares.value -= shareCount.value
         val log = Logs(
             getDateToString(date.value),
@@ -72,19 +68,16 @@ fun sellStock(
         )
         logs.value += log
         shareCount.value = 0
-        isBuyingOrSelling.value = false
     } else {
         shareCount.value = stock.shares.value
     }
-
-
 }
 
-fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock): Double {
+fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock, format: DecimalFormat): String {
     val totalInvested = shareCount.value * stock.averageBuyPrice.value
     val totalIfSellOut = shareCount.value * stock.price.value
     val difference = totalIfSellOut - totalInvested
-    return difference * shareCount.value
+    return format.format(difference * shareCount.value)
 }
 
 fun getExtraProfit(
