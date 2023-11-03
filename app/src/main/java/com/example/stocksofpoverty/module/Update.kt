@@ -26,7 +26,8 @@ fun update(
     banks: MutableState<List<Bank>>,
     format: DecimalFormat,
     gameLost: MutableState<Boolean>,
-    orderForExecute: MutableState<List<MarketOrder>>
+    orderForExecute: MutableState<List<MarketOrder>>,
+    popupList: MutableState<List<String>>
 ) {
     updateStockPrice(stocks, date, format)
     updateDate(date)
@@ -39,7 +40,7 @@ fun update(
     if (date.value.day.value == 1 && date.value.month.value == 1) {
         checkWinnerLoser(player, banks, logs, stocks,gameLost,date,perks)
     }
-    checkOrders(orderForExecute,date,logs,player)
+    checkOrders(orderForExecute,date,logs,player,popupList)
 }
 fun checkWinnerLoser(
     player: MutableState<Player>,

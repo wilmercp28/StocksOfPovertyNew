@@ -11,11 +11,12 @@ fun checkOrders(
     orderForExecute: MutableState<List<MarketOrder>>,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    player: MutableState<Player>
+    player: MutableState<Player>,
+    popupList: MutableState<List<String>>
 ) {
     for (orders in orderForExecute.value) {
         when (orders.typeOfOrder) {
-            "Date" -> dateOrdersUpdate(orderForExecute, orders, date, logs, player)
+            "Date" -> dateOrdersUpdate(orderForExecute, orders, date, logs, player,popupList)
         }
     }
 }
@@ -25,7 +26,8 @@ fun dateOrdersUpdate(
     orders: MarketOrder,
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
-    player: MutableState<Player>
+    player: MutableState<Player>,
+    popupList: MutableState<List<String>>
 ) {
     if (
         date.value.day.value == orders.dateToExecute[0] &&
@@ -41,11 +43,13 @@ fun dateOrdersUpdate(
                     getDateToString(date.value),
                     "Date order executed for a total price of ${orders.shares * orders.stockName.price.value}"
                 )
+                popupList.value += "Date order executed for \n${orders.stockName.name}"
             } else {
                 logs.value += Logs(
                     getDateToString(date.value),
                     "Date order cancel for insufficient funds"
                 )
+                popupList.value += "Date order cancel for \n${orders.stockName.name}"
                 orderForExecute.value -= orders
             }
         } else {

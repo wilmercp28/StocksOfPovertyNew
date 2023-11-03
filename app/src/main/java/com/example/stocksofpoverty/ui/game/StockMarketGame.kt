@@ -100,9 +100,23 @@ fun StockMarketGame(
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
+    val popupList = remember { mutableStateOf(emptyList<String>()) }
     Update {
         if (!paused.value) {
-            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format, gameLost,orderForExecute)
+            update(
+                stocks,
+                date,
+                player,
+                news,
+                logs,
+                perks,
+                yearlySummary,
+                banks,
+                format,
+                gameLost,
+                orderForExecute,
+                popupList
+            )
             if (date.value.day.value == 1 && date.value.month.value == 1) {
                 coroutine.launch {
                     saveGame(
@@ -123,6 +137,9 @@ fun StockMarketGame(
                 }
             }
         }
+    }
+    if (popupList.value.isNotEmpty()) {
+        PopupUI(popupList)
     }
     if (gameLost.value) {
         GameLostMenu()
@@ -226,7 +243,7 @@ fun StockMarketGame(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    Stocks(stocks, player, devMode, date, logs, perks, format, orderForExecute)
+                    Stocks(stocks, player, devMode, date, logs, perks, format, orderForExecute,popupList)
                 }
                 AnimatedVisibility(
                     selectedScreen.value == "Player",
@@ -244,7 +261,8 @@ fun StockMarketGame(
                         banks,
                         news,
                         achievements,
-                        stocks
+                        stocks,
+                        popupList
                     )
                 }
                 AnimatedVisibility(
@@ -326,7 +344,8 @@ fun Stocks(
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
     format: DecimalFormat,
-    orderForExecute: MutableState<List<MarketOrder>>
+    orderForExecute: MutableState<List<MarketOrder>>,
+    popupList: MutableState<List<String>>
 ) {
     val sortBy = remember { mutableStateOf("Name") }
     val ascendant = remember { mutableStateOf(true) }

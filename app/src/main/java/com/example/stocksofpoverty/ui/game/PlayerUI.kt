@@ -60,7 +60,8 @@ fun PlayerUI(
     banks: MutableState<List<Bank>>,
     news: MutableState<List<News>>,
     achievements: MutableState<Achievements>,
-    stocks: MutableState<List<Stock>>
+    stocks: MutableState<List<Stock>>,
+    popupList: MutableState<List<String>>
 ) {
     val selectedPerk = remember { mutableStateOf(perks.value[0]) }
     val showAlert = remember { mutableStateOf(false) }
@@ -145,6 +146,11 @@ fun PlayerUI(
                     player.value.yearProfit.value += 1000
                 }) {
                     Text(text = "Profit Up")
+                }
+                Button(onClick = {
+                    popupList.value += "Test Test Test"
+                }) {
+                    Text(text = "Generate Popup")
                 }
             }
         }
