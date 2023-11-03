@@ -60,6 +60,7 @@ import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
@@ -93,14 +94,15 @@ fun StockMarketGame(
     yearlySummary: MutableState<List<YearlySummary>>,
     achievements: MutableState<Achievements>,
     gameLost: MutableState<Boolean>,
-    startGame: MutableState<Boolean>
+    startGame: MutableState<Boolean>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     val selectedScreen = remember { mutableStateOf("Market") }
     val paused = remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
     Update {
         if (!paused.value) {
-            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format, gameLost)
+            update(stocks, date, player, news, logs, perks, yearlySummary, banks, format, gameLost,orderForExecute)
             if (date.value.day.value == 1 && date.value.month.value == 1) {
                 coroutine.launch {
                     saveGame(
@@ -157,6 +159,11 @@ fun StockMarketGame(
                             )
                             TopScreenIcons(
                                 "Options Menu",
+                                selectedScreen,
+                                R.drawable.menu
+                            )
+                            TopScreenIcons(
+                                "Market Orders List",
                                 selectedScreen,
                                 R.drawable.menu
                             )
@@ -219,7 +226,7 @@ fun StockMarketGame(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    Stocks(stocks, player, devMode, date, logs, perks, format)
+                    Stocks(stocks, player, devMode, date, logs, perks, format, orderForExecute)
                 }
                 AnimatedVisibility(
                     selectedScreen.value == "Player",
@@ -281,6 +288,13 @@ fun StockMarketGame(
                         paused
                     )
                 }
+                AnimatedVisibility(
+                    selectedScreen.value == "Market Orders List",
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    MarketOrdersListUI(orderForExecute)
+                }
             }
         }
     }
@@ -311,7 +325,8 @@ fun Stocks(
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
-    format: DecimalFormat
+    format: DecimalFormat,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     val sortBy = remember { mutableStateOf("Name") }
     val ascendant = remember { mutableStateOf(true) }
@@ -379,7 +394,16 @@ fun Stocks(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    ShowStock(stock, devMode, player, date, logs, perks, autoSorting)
+                    ShowStock(
+                        stock,
+                        devMode,
+                        player,
+                        date,
+                        logs,
+                        perks,
+                        autoSorting,
+                        orderForExecute
+                    )
                 }
             }
         }
@@ -427,7 +451,8 @@ fun ShowStock(
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
-    autoSorting: MutableState<Boolean>
+    autoSorting: MutableState<Boolean>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
@@ -553,7 +578,8 @@ fun ShowStock(
                 format,
                 expanded,
                 logs,
-                date
+                date,
+                orderForExecute
             )
         }
     }
@@ -569,7 +595,8 @@ fun MarketOrderUI(
     format: DecimalFormat,
     expanded: MutableState<Boolean>,
     logs: MutableState<List<Logs>>,
-    date: MutableState<Date>
+    date: MutableState<Date>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     Column(
         modifier = Modifier
@@ -606,15 +633,20 @@ fun MarketOrderUI(
                 GainingOrLosingUI(player, stock, sharesCount, format, buying)
                 ShareCountsMenu(sharesCount, stock, buying, player)
                 ExecuteOrCancelOrderUI(
-                    selectedOrder,
-                    buying,
                     expanded,
                     sharesCount,
-                    logs,
-                    date,
-                    stock,
-                    player,
-                    format
+                    onExecute = {
+                        executeMarketOrder(
+                            selectedOrder,
+                            buying,
+                            sharesCount,
+                            logs,
+                            date,
+                            stock,
+                            player,
+                            format,
+                        )
+                    }
                 )
             }
         }
@@ -623,70 +655,97 @@ fun MarketOrderUI(
             val type = listOf("Date", "Percentage Change", "Price")
             val selectedType = remember { mutableStateOf(type[0]) }
             val dropMenuExpand = remember { mutableStateOf(false) }
-            val selectedDate = remember { mutableStateOf(date) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 BuyingOrSellingMarkerOrderUI(buying, stock)
+                Text(text = "By")
                 Button(onClick = { dropMenuExpand.value = !dropMenuExpand.value }) {
                     Text(text = selectedType.value)
                     LimitOrderDropDownMenu(type, selectedType, dropMenuExpand)
                 }
                 ShareCountsMenu(sharesCount, stock, buying, player)
-                when(selectedType.value){
-                    "Date" -> DateSelectorUI(date)
-                }
-                    ExecuteOrCancelOrderUI(
-                        selectedOrder,
-                        buying,
+                when (selectedType.value) {
+                    "Date" -> DateSelectorUI(
+                        date,
                         expanded,
                         sharesCount,
-                        logs,
-                        date,
-                        stock,
-                        player,
-                        format
+                        onExecute = { dateForOrder ->
+                            executeMarketOrder(
+                                selectedOrder,
+                                buying,
+                                sharesCount,
+                                logs,
+                                date,
+                                stock,
+                                player,
+                                format,
+                                selectedType,
+                                dateForOrder = dateForOrder,
+                                ordersList = orderForExecute
+                            )
+                        }
                     )
-            }
-        }
-    }
-}
-
-@Composable
-fun DateSelectorUI(date: MutableState<Date>) {
-    val day = remember { mutableStateOf(Pair(date.value.day.value,"Day"),) }
-    val month = remember { mutableStateOf(Pair(date.value.month.value,"Month")) }
-    val year = remember { mutableStateOf(Pair(date.value.year.value,"Year")) }
-    val dates = listOf(day,month,year)
-    
-    Row {
-        for (date in dates){
-            DateDetails(date)
-        }
-    }
-}
-@Composable
-fun DateDetails(
-    date: MutableState<Pair<Int, String>>
-) {
-    Column(
-        modifier = Modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        IconButton(onClick = {
-            if (date.value.second == "Day"){
-                if (date.value.first < 31){
-                    date.value.first += 1
                 }
             }
         }
-        ) {
-
-        }
-        Text(text = date.value.second)
-        Text(text = date.value.first.toString())
     }
-    
+}
+
+@Composable
+fun DateSelectorUI(
+    date: MutableState<Date>,
+    expanded: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    onExecute: (List<Int>) -> Unit
+) {
+    val day = remember { mutableStateOf(date.value.day.value) }
+    val month = remember { mutableStateOf(date.value.month.value) }
+    val year = remember { mutableStateOf(date.value.year.value) }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row {
+            DateNumberSelectorUI("Day", 30, day)
+            DateNumberSelectorUI("Month", 12, month)
+            DateNumberSelectorUI("Year", null, year)
+        }
+        ExecuteOrCancelOrderUI(
+            expanded,
+            sharesCount,
+            onExecute = { onExecute(listOf(day.value, month.value, year.value)) }
+        )
+    }
+}
+
+@Composable
+fun DateNumberSelectorUI(
+    name: String,
+    limit: Int?,
+    mutableInt: MutableState<Int>
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = name)
+        IconButton(onClick = {
+            if (limit != null) {
+                if (mutableInt.value < limit) {
+                    mutableInt.value += 1
+                } else mutableInt.value = 1
+            } else mutableInt.value += 1
+        }) {
+            Icon(Icons.Default.KeyboardArrowUp, contentDescription = name)
+        }
+        Text(text = mutableInt.value.toString())
+        IconButton(onClick = {
+            if (mutableInt.value > 1) {
+                mutableInt.value -= 1
+            } else mutableInt.value = 30
+        }) {
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = name)
+        }
+    }
 }
 
 @Composable
@@ -712,15 +771,9 @@ fun LimitOrderDropDownMenu(
 
 @Composable
 fun ExecuteOrCancelOrderUI(
-    selectedOrder: MutableState<String>,
-    buying: MutableState<Boolean>,
     expanded: MutableState<Boolean>,
     sharesCount: MutableState<Int>,
-    logs: MutableState<List<Logs>>,
-    date: MutableState<Date>,
-    stock: Stock,
-    player: MutableState<Player>,
-    format: DecimalFormat
+    onExecute: () -> Unit
 ) {
 
     Row(
@@ -733,16 +786,7 @@ fun ExecuteOrCancelOrderUI(
             Text(text = "Cancel Order")
         }
         Button(onClick = {
-            executeMarketOrder(
-                selectedOrder,
-                buying,
-                sharesCount,
-                logs,
-                date,
-                stock,
-                player,
-                format
-            )
+            onExecute()
         }) {
             Text(text = "Execute Order")
         }

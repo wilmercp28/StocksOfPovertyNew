@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.example.stocksofpoverty.R
+import java.util.UUID
 import kotlin.random.Random
 
 data class Stock(
@@ -305,4 +306,21 @@ data class YearlySummary(
 
 fun getIInitialYearlySummary(): List<YearlySummary> {
     return emptyList()
+}
+
+
+data class MarketOrder(
+    val id: String = UUID.randomUUID().toString(),
+    val stockName: Stock,
+    val buying: Boolean,
+    val shares: Int,
+    val isLimitOrder: Boolean,
+    val typeOfOrder: String = "",
+    val dateToExecute: List<Int> = emptyList()
+)
+
+fun getInitialMarketOrderList(
+
+): List<MarketOrder> {
+    return emptyList<MarketOrder>()
 }

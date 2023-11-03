@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
@@ -24,7 +25,8 @@ fun update(
     yearlySummary: MutableState<List<YearlySummary>>,
     banks: MutableState<List<Bank>>,
     format: DecimalFormat,
-    gameLost: MutableState<Boolean>
+    gameLost: MutableState<Boolean>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     updateStockPrice(stocks, date, format)
     updateDate(date)
@@ -37,9 +39,8 @@ fun update(
     if (date.value.day.value == 1 && date.value.month.value == 1) {
         checkWinnerLoser(player, banks, logs, stocks,gameLost,date,perks)
     }
+    checkOrders(orderForExecute,date,logs,player)
 }
-
-
 fun checkWinnerLoser(
     player: MutableState<Player>,
     banks: MutableState<List<Bank>>,

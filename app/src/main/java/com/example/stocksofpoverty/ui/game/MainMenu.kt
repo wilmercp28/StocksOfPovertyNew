@@ -61,6 +61,7 @@ import com.example.stocksofpoverty.data.getInitialAchievements
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
+import com.example.stocksofpoverty.data.getInitialMarketOrderList
 import com.example.stocksofpoverty.data.getInitialNewsList
 import com.example.stocksofpoverty.data.getInitialPerks
 import com.example.stocksofpoverty.data.getInitialPlayer
@@ -89,6 +90,7 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
     val saveSlot = remember { mutableStateOf(0) }
     val startGame = remember { mutableStateOf(false) }
     val loadingGame = remember { mutableStateOf(false) }
+    val orderForExecute = remember { mutableStateOf(getInitialMarketOrderList()) }
     if (startGame.value) {
         StockMarketGame(
             stocks,
@@ -105,7 +107,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             yearlySummary,
             achievements,
             gameLost,
-            startGame
+            startGame,
+            orderForExecute
         )
     } else if (!loadingGame.value) {
         MainMenuUI(
