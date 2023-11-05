@@ -421,7 +421,8 @@ fun Stocks(
                         logs,
                         perks,
                         autoSorting,
-                        orderForExecute
+                        orderForExecute,
+                        popupList
                     )
                 }
             }
@@ -471,7 +472,8 @@ fun ShowStock(
     logs: MutableState<List<Logs>>,
     perks: MutableState<List<Perk>>,
     autoSorting: MutableState<Boolean>,
-    orderForExecute: MutableState<List<MarketOrder>>
+    orderForExecute: MutableState<List<MarketOrder>>,
+    popupList: MutableState<List<String>>
 ) {
     val format = DecimalFormat("#.##")
     val expanded = remember { mutableStateOf(false) }
@@ -598,7 +600,8 @@ fun ShowStock(
                 expanded,
                 logs,
                 date,
-                orderForExecute
+                orderForExecute,
+                popupList
             )
         }
     }
@@ -615,7 +618,8 @@ fun MarketOrderUI(
     expanded: MutableState<Boolean>,
     logs: MutableState<List<Logs>>,
     date: MutableState<Date>,
-    orderForExecute: MutableState<List<MarketOrder>>
+    orderForExecute: MutableState<List<MarketOrder>>,
+    popupList: MutableState<List<String>>
 ) {
     Column(
         modifier = Modifier
@@ -664,6 +668,7 @@ fun MarketOrderUI(
                             stock,
                             player,
                             format,
+                            popupList
                         )
                     }
                 )
@@ -699,6 +704,7 @@ fun MarketOrderUI(
                                 stock,
                                 player,
                                 format,
+                                popupList,
                                 selectedType,
                                 dateForOrder = dateForOrder,
                                 ordersList = orderForExecute
@@ -725,9 +731,7 @@ fun DateSelectorUI(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row {
-            DateNumberSelectorUI("Day", 30, day)
-            DateNumberSelectorUI("Month", 12, month)
-            DateNumberSelectorUI("Year", null, year)
+            DateNumberSelectorUI("Days", 30000000, day)
         }
         ExecuteOrCancelOrderUI(
             expanded,
@@ -743,27 +747,29 @@ fun DateNumberSelectorUI(
     limit: Int?,
     mutableInt: MutableState<Int>
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+    Text(text = "Days to execute order")
+    Row(
+        modifier = Modifier
+            .border(1.dp,MaterialTheme.colorScheme.primary),
+        horizontalArrangement = Arrangement.Center
     ) {
-        Text(text = name)
-        IconButton(onClick = {
-            if (limit != null) {
-                if (mutableInt.value < limit) {
-                    mutableInt.value += 1
-                } else mutableInt.value = 1
-            } else mutableInt.value += 1
-        }) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = name)
+       Button(onClick = { if (mutableInt.value > 5) mutableInt.value -= 5 }
+       ) {
+           Text(text = "-5")
+       }
+        Button(onClick = { if (mutableInt.value > 0) mutableInt.value -= 1}) {
+            Text(text = "-1")
         }
         Text(text = mutableInt.value.toString())
-        IconButton(onClick = {
-            if (mutableInt.value > 1) {
-                mutableInt.value -= 1
-            } else mutableInt.value = 30
-        }) {
-            Icon(Icons.Default.KeyboardArrowDown, contentDescription = name)
+        Button(onClick = { mutableInt.value++}) {
+            Text(text = "+1")
         }
+        Button(onClick = { mutableInt.value += 5}) {
+            Text(text = "+5")
+        }
+        
+        
+        
     }
 }
 
@@ -805,6 +811,7 @@ fun ExecuteOrCancelOrderUI(
             Text(text = "Cancel Order")
         }
         Button(onClick = {
+            expanded.value = false
             onExecute()
         }) {
             Text(text = "Execute Order")

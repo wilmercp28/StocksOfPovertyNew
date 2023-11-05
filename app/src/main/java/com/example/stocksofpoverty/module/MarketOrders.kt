@@ -19,9 +19,10 @@ fun executeMarketOrder(
     stock: Stock,
     player: MutableState<Player>,
     format: DecimalFormat,
+    popupList: MutableState<List<String>>,
     selectedType: MutableState<String> = mutableStateOf(""),
     dateForOrder: List<Int> = emptyList(),
-    ordersList: MutableState<List<MarketOrder>> = mutableStateOf(emptyList())
+    ordersList: MutableState<List<MarketOrder>> = mutableStateOf(emptyList()),
 ) {
     when (selectedOrder.value) {
         "Market Order" -> marketOrder(
@@ -44,7 +45,8 @@ fun executeMarketOrder(
             format,
             dateForOrder,
             selectedType,
-            ordersList
+            ordersList,
+            popupList
         )
     }
 }
@@ -75,7 +77,8 @@ fun limitOrder(
     format: DecimalFormat,
     dateForOrder: List<Int>,
     selectedType: MutableState<String>,
-    ordersList: MutableState<List<MarketOrder>>
+    ordersList: MutableState<List<MarketOrder>>,
+    popupList: MutableState<List<String>>
 ) {
     when (selectedType.value) {
         "Date" -> dateOrders(
@@ -87,7 +90,8 @@ fun limitOrder(
             format,
             dateForOrder,
             ordersList,
-            selectedType
+            selectedType,
+            popupList
         )
     }
 }
@@ -101,25 +105,31 @@ fun dateOrders(
     format: DecimalFormat,
     dateForOrder: List<Int>,
     ordersList: MutableState<List<MarketOrder>>,
-    selectedType: MutableState<String>
+    selectedType: MutableState<String>,
+    popupList: MutableState<List<String>>
 ) {
-    if (date.value.year.value <= dateForOrder[2]) {
-        if (date.value.month.value <= dateForOrder[1]) {
-            if (date.value.day.value < dateForOrder[0]) {
-                val newDateOrder = MarketOrder(
-                    stockName = stock,
-                    buying = buying.value,
-                    shares = sharesCount.value,
-                    isLimitOrder = true,
-                    typeOfOrder = selectedType.value,
-                    dateToExecute = dateForOrder
-                )
-                ordersList.value += newDateOrder
-                val buying = if (buying.value) "Buy" else "Sell"
-                logs.value += Logs(
-                    getDateToString(date.value),
-                    "New date order for ${stock.name}.$buying To be execute by Day${dateForOrder[0]} Month ${dateForOrder[1]} Year ${dateForOrder[2]}"
-                )
+    if (sharesCount.value == 0) {
+        popupList.value += "Error, order share count cant be 0"
+    } else {
+        if (date.value.year.value <= dateForOrder[2]) {
+            if (date.value.month.value <= dateForOrder[1]) {
+                if (date.value.day.value < dateForOrder[0]) {
+                    val newDateOrder = MarketOrder(
+                        stockName = stock,
+                        buying = buying.value,
+                        shares = sharesCount.value,
+                        isLimitOrder = true,
+                        typeOfOrder = selectedType.value,
+                        dateToExecute = dateForOrder
+                    )
+                    ordersList.value += newDateOrder
+                    val buying = if (buying.value) "Buy" else "Sell"
+                    logs.value += Logs(
+                        getDateToString(date.value),
+                        "New date order for ${stock.name}.$buying To be execute by Day${dateForOrder[0]} Month ${dateForOrder[1]} Year ${dateForOrder[2]}"
+                    )
+                    popupList.value += "Date order created"
+                }
             }
         }
     }
