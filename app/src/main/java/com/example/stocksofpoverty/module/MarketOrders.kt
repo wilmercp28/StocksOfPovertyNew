@@ -7,7 +7,6 @@ import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
-import com.example.stocksofpoverty.data.getDateToString
 import java.text.DecimalFormat
 
 fun executeMarketOrder(
@@ -21,7 +20,8 @@ fun executeMarketOrder(
     format: DecimalFormat,
     popupList: MutableState<List<String>>,
     selectedType: MutableState<String> = mutableStateOf(""),
-    dateForOrder: List<Int> = emptyList(),
+    repeatOrder: Boolean = false,
+    daysForOrder: Int = 0,
     ordersList: MutableState<List<MarketOrder>> = mutableStateOf(emptyList()),
 ) {
     when (selectedOrder.value) {
@@ -43,10 +43,11 @@ fun executeMarketOrder(
             stock,
             player,
             format,
-            dateForOrder,
+            daysForOrder,
             selectedType,
             ordersList,
-            popupList
+            popupList,
+            repeatOrder
         )
     }
 }
@@ -61,9 +62,9 @@ fun marketOrder(
     format: DecimalFormat
 ) {
     if (buying.value) {
-        buyStock(stock, sharesCount, player, date, logs, format)
+        buyStock(stock, sharesCount, player, date, logs)
     } else {
-        sellStock(stock, sharesCount, player, date, logs, format)
+        sellStock(stock, sharesCount, player, date, logs)
     }
 }
 
@@ -75,10 +76,11 @@ fun limitOrder(
     stock: Stock,
     player: MutableState<Player>,
     format: DecimalFormat,
-    dateForOrder: List<Int>,
+    daysForOrder: Int,
     selectedType: MutableState<String>,
     ordersList: MutableState<List<MarketOrder>>,
-    popupList: MutableState<List<String>>
+    popupList: MutableState<List<String>>,
+    repeatOrder: Boolean
 ) {
     when (selectedType.value) {
         "Date" -> dateOrders(
@@ -88,10 +90,11 @@ fun limitOrder(
             logs,
             stock,
             format,
-            dateForOrder,
+            daysForOrder,
             ordersList,
             selectedType,
-            popupList
+            popupList,
+            repeatOrder
         )
     }
 }
@@ -103,35 +106,26 @@ fun dateOrders(
     logs: MutableState<List<Logs>>,
     stock: Stock,
     format: DecimalFormat,
-    dateForOrder: List<Int>,
+    daysForOrder: Int,
     ordersList: MutableState<List<MarketOrder>>,
     selectedType: MutableState<String>,
-    popupList: MutableState<List<String>>
+    popupList: MutableState<List<String>>,
+    repeatOrder: Boolean
 ) {
-    if (sharesCount.value == 0) {
-        popupList.value += "Error, order share count cant be 0"
+    if (sharesCount.value == 0){
+        popupList.value += "Error, Shares cant be 0"
     } else {
-        if (date.value.year.value <= dateForOrder[2]) {
-            if (date.value.month.value <= dateForOrder[1]) {
-                if (date.value.day.value < dateForOrder[0]) {
-                    val newDateOrder = MarketOrder(
-                        stockName = stock,
-                        buying = buying.value,
-                        shares = sharesCount.value,
-                        isLimitOrder = true,
-                        typeOfOrder = selectedType.value,
-                        dateToExecute = dateForOrder
-                    )
-                    ordersList.value += newDateOrder
-                    val buying = if (buying.value) "Buy" else "Sell"
-                    logs.value += Logs(
-                        getDateToString(date.value),
-                        "New date order for ${stock.name}.$buying To be execute by Day${dateForOrder[0]} Month ${dateForOrder[1]} Year ${dateForOrder[2]}"
-                    )
-                    popupList.value += "Date order created"
-                }
-            }
-        }
+        ordersList.value += MarketOrder(
+            stock = stock,
+            buying = buying.value,
+            shares = sharesCount.value,
+            isLimitOrder = true,
+            typeOfOrder = selectedType.value,
+            repeat = mutableStateOf(repeatOrder),
+            initialDaysToExecute = daysForOrder,
+            daysToExecute = mutableStateOf(daysForOrder)
+        )
+        popupList.value += "Date order created"
     }
 }
 

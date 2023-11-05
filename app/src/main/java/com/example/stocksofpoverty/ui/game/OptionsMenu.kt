@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
@@ -39,7 +41,9 @@ fun OptionsMenu(
     date: MutableState<Date>,
     perks: MutableState<List<Perk>>,
     dataStore: DataStore<Preferences>,
-    paused: MutableState<Boolean>
+    paused: MutableState<Boolean>,
+    achievements: MutableState<Achievements>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     val coroutine = rememberCoroutineScope()
     val showAlert = remember { mutableStateOf(false) }
@@ -56,7 +60,9 @@ fun OptionsMenu(
                     news.value,
                     logs.value,
                     yearlySummary.value,
-                    perks.value
+                    perks.value,
+                    achievements.value,
+                    orderForExecute.value.toList()
                 )
                 coroutine.launch {
                     if (!paused.value) paused.value = true

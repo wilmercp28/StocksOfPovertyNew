@@ -50,6 +50,7 @@ import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
@@ -125,7 +126,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
             logs,
             yearlySummary,
             devMode,
-            achievements
+            achievements,
+            orderForExecute
         )
     } else if (!startGame.value && loadingGame.value) {
         LoadGameUI(dataStore, loadingGame) { saveGame ->
@@ -141,7 +143,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
                 banks,
                 news,
                 achievements,
-                gameLost
+                gameLost,
+                orderForExecute
             )
         }
     }
@@ -293,7 +296,8 @@ fun MainMenuUI(
     logs: MutableState<List<Logs>>,
     yearlySummary: MutableState<List<YearlySummary>>,
     devMode: MutableState<Boolean>,
-    achievements: MutableState<Achievements>
+    achievements: MutableState<Achievements>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     var selectingName by remember { mutableStateOf(false)}
     Image(
@@ -347,7 +351,8 @@ fun MainMenuUI(
                             news,
                             logs,
                             yearlySummary,
-                            achievements
+                            achievements,
+                            orderForExecute
                         )
                     }) {
                         Text(text = "Confirm")

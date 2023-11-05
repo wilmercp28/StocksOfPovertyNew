@@ -4,17 +4,16 @@ import androidx.compose.runtime.MutableState
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
-import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
+import com.example.stocksofpoverty.data.formatMoneyValue
 import com.example.stocksofpoverty.data.getDateToString
 import java.text.DecimalFormat
 
 fun buyStock(
     stock: Stock, shareCount: MutableState<Int>, player: MutableState<Player>,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>,
-    format: DecimalFormat
+    logs: MutableState<List<Logs>>
 ) {
     val totalPrice = stock.price.value * shareCount.value
     if (totalPrice < player.value.balance.value && shareCount.value != 0) {
@@ -24,7 +23,7 @@ fun buyStock(
         player.value.yearlySpend.value += totalPrice
         val log = Logs(
             getDateToString(date.value),
-            "Bought ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} "
+            "Bought ${shareCount.value} share of\n${stock.name} at ${formatMoneyValue(stock.price.value)} "
         )
         logs.value += log
         shareCount.value = 0
@@ -54,17 +53,16 @@ fun sellStock(
     shareCount: MutableState<Int>,
     player: MutableState<Player>,
     date: MutableState<Date>,
-    logs: MutableState<List<Logs>>,
-    format: DecimalFormat
+    logs: MutableState<List<Logs>>
 ) {
     if (shareCount.value != 0 && shareCount.value <= stock.shares.value) {
-        player.value.yearProfit.value += getProfitLosses(shareCount, stock, format).toDouble()
-        player.value.totalProfit.value += getProfitLosses(shareCount, stock, format).toDouble()
+        player.value.yearProfit.value += getProfitLosses(shareCount,stock).toDouble()
+        player.value.totalProfit.value += getProfitLosses(shareCount,stock).toDouble()
         player.value.balance.value += shareCount.value * stock.price.value
         stock.shares.value -= shareCount.value
         val log = Logs(
             getDateToString(date.value),
-            "Sold ${shareCount.value} share of\n${stock.name} at ${format.format(stock.price.value)} "
+            "Sold ${shareCount.value} share of\n${stock.name} at ${formatMoneyValue(stock.price.value)} "
         )
         logs.value += log
         shareCount.value = 0
@@ -73,11 +71,11 @@ fun sellStock(
     }
 }
 
-fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock, format: DecimalFormat): String {
+fun getProfitLosses(shareCount: MutableState<Int>, stock: Stock): String {
     val totalInvested = shareCount.value * stock.averageBuyPrice.value
     val totalIfSellOut = shareCount.value * stock.price.value
     val difference = totalIfSellOut - totalInvested
-    return format.format(difference * shareCount.value)
+    return formatMoneyValue(difference * shareCount.value)
 }
 
 fun getExtraProfit(

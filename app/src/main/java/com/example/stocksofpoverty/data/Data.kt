@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.example.stocksofpoverty.R
+import java.text.DecimalFormat
 import java.util.UUID
 import kotlin.random.Random
 
@@ -61,7 +62,9 @@ data class SaveGame(
     val news: List<News>,
     val logs: List<Logs>,
     val yearlySummary: List<YearlySummary>,
-    val perk: List<Perk>
+    val perk: List<Perk>,
+    val achievements: Achievements,
+    val ordersForExecute: List<MarketOrder>
 )
 
 data class Date(
@@ -311,16 +314,26 @@ fun getIInitialYearlySummary(): List<YearlySummary> {
 
 data class MarketOrder(
     val id: String = UUID.randomUUID().toString(),
-    val stockName: Stock,
+    val stock: Stock,
     val buying: Boolean,
     val shares: Int,
     val isLimitOrder: Boolean,
+    var repeat: MutableState<Boolean>,
+    var showPopup: MutableState<Boolean> = mutableStateOf(true),
     val typeOfOrder: String = "",
-    val dateToExecute: List<Int> = emptyList()
+    val initialDaysToExecute: Int = 0,
+    var daysToExecute: MutableState<Int> = mutableStateOf(0)
 )
 
 fun getInitialMarketOrderList(
 
 ): List<MarketOrder> {
-    return emptyList<MarketOrder>()
+    return emptyList()
+}
+
+fun formatMoneyValue(
+    value: Double
+): String {
+    val format = DecimalFormat("#.##")
+    return format.format(value)
 }

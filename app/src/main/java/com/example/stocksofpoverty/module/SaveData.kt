@@ -10,6 +10,7 @@ import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
@@ -32,6 +33,7 @@ suspend fun saveGame(
     }
     Log.d("GameSaved", "Savegame, Slot $saveGameName")
 }
+
 suspend fun getSaveGame(
     dataStore: DataStore<Preferences>,
     saveGameName: Int
@@ -44,16 +46,18 @@ suspend fun getSaveGame(
         null
     }
 }
+
 suspend fun removeSaveGame(
     dataStore: DataStore<Preferences>,
     saveGameName: Int
-):Boolean {
+): Boolean {
     val key = stringPreferencesKey("save_game_data_$saveGameName")
-     dataStore.edit { preferences ->
+    dataStore.edit { preferences ->
         preferences.remove(key)
     }
     return true
 }
+
 suspend fun getAllSaveGames(dataStore: DataStore<Preferences>): List<SaveGame> {
     val saveGames = mutableListOf<SaveGame>()
     for (slot in 0 until 20) {
@@ -75,6 +79,7 @@ suspend fun getEmptySaveSlot(dataStore: DataStore<Preferences>): Int {
     }
     return -1
 }
+
 fun loadSave(
     saveGame: SaveGame,
     stocks: MutableState<List<Stock>>,
@@ -88,6 +93,7 @@ fun loadSave(
     news: MutableState<List<News>>,
     achievements: MutableState<Achievements>,
     gameLost: MutableState<Boolean>,
+    orderForExecute: MutableState<List<MarketOrder>>,
 ) {
     stocks.value = saveGame.stock
     player.value = saveGame.player
@@ -96,7 +102,8 @@ fun loadSave(
     logs.value = saveGame.logs
     banks.value = saveGame.bank
     news.value = saveGame.news
-
+    achievements.value = saveGame.achievements
+    orderForExecute.value = saveGame.ordersForExecute
     loadingGame.value = false
     startGame.value = true
 }

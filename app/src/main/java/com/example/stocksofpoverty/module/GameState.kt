@@ -7,6 +7,7 @@ import com.example.stocksofpoverty.data.Achievements
 import com.example.stocksofpoverty.data.Bank
 import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
+import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
 import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
@@ -17,6 +18,7 @@ import com.example.stocksofpoverty.data.getInitialAchievements
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
 import com.example.stocksofpoverty.data.getInitialLog
+import com.example.stocksofpoverty.data.getInitialMarketOrderList
 import com.example.stocksofpoverty.data.getInitialNewsList
 import com.example.stocksofpoverty.data.getInitialPerks
 import com.example.stocksofpoverty.data.getInitialPlayer
@@ -38,7 +40,8 @@ fun startNewGame(
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
     yearlySummary: MutableState<List<YearlySummary>>,
-    achievements: MutableState<Achievements>
+    achievements: MutableState<Achievements>,
+    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     player.value = getInitialPlayer()
     date.value = getInitialDate()
@@ -47,6 +50,9 @@ fun startNewGame(
     banks.value = getInitialBanks()
     news.value = getInitialNewsList()
     logs.value = getInitialLog()
+    achievements.value = getInitialAchievements()
+    orderForExecute.value = getInitialMarketOrderList()
+
     GlobalScope.launch {
         saveSlot.value = getEmptySaveSlot(dataStore)
         val saveGame = SaveGame(
@@ -58,7 +64,10 @@ fun startNewGame(
             news.value,
             logs.value,
             yearlySummary.value.toList(),
-            perks.value.toList()
+            perks.value.toList(),
+            achievements.value,
+            orderForExecute.value.toList()
+
         )
         saveGame(saveGame, dataStore, saveSlot.value)
         startGame.value = true

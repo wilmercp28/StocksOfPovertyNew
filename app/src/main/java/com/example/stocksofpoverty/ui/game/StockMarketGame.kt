@@ -129,7 +129,9 @@ fun StockMarketGame(
                             news.value.toList(),
                             logs.value.toList(),
                             yearlySummary.value.toList(),
-                            perks.value.toList()
+                            perks.value.toList(),
+                            achievements.value,
+                            orderForExecute.value.toList()
                         ),
                         dataStore,
                         saveSlot.value
@@ -243,7 +245,17 @@ fun StockMarketGame(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    Stocks(stocks, player, devMode, date, logs, perks, format, orderForExecute,popupList)
+                    Stocks(
+                        stocks,
+                        player,
+                        devMode,
+                        date,
+                        logs,
+                        perks,
+                        format,
+                        orderForExecute,
+                        popupList
+                    )
                 }
                 AnimatedVisibility(
                     selectedScreen.value == "Player",
@@ -303,7 +315,9 @@ fun StockMarketGame(
                         date,
                         perks,
                         dataStore,
-                        paused
+                        paused,
+                        achievements,
+                        orderForExecute
                     )
                 }
                 AnimatedVisibility(
@@ -668,7 +682,7 @@ fun MarketOrderUI(
                             stock,
                             player,
                             format,
-                            popupList
+                            popupList,
                         )
                     }
                 )
@@ -679,6 +693,7 @@ fun MarketOrderUI(
             val type = listOf("Date", "Percentage Change", "Price")
             val selectedType = remember { mutableStateOf(type[0]) }
             val dropMenuExpand = remember { mutableStateOf(false) }
+            val repeatOrder = remember { mutableStateOf(false) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -691,26 +706,26 @@ fun MarketOrderUI(
                 ShareCountsMenu(sharesCount, stock, buying, player)
                 when (selectedType.value) {
                     "Date" -> DateSelectorUI(
-                        date,
                         expanded,
                         sharesCount,
-                        onExecute = { dateForOrder ->
-                            executeMarketOrder(
-                                selectedOrder,
-                                buying,
-                                sharesCount,
-                                logs,
-                                date,
-                                stock,
-                                player,
-                                format,
-                                popupList,
-                                selectedType,
-                                dateForOrder = dateForOrder,
-                                ordersList = orderForExecute
-                            )
-                        }
-                    )
+                        repeatOrder
+                    ) { daysForOrder ->
+                        executeMarketOrder(
+                            selectedOrder,
+                            buying,
+                            sharesCount,
+                            logs,
+                            date,
+                            stock,
+                            player,
+                            format,
+                            popupList,
+                            selectedType,
+                            repeatOrder.value,
+                            daysForOrder = daysForOrder,
+                            ordersList = orderForExecute
+                        )
+                    }
                 }
             }
         }
@@ -719,57 +734,61 @@ fun MarketOrderUI(
 
 @Composable
 fun DateSelectorUI(
-    date: MutableState<Date>,
     expanded: MutableState<Boolean>,
     sharesCount: MutableState<Int>,
-    onExecute: (List<Int>) -> Unit
+    repeatOrder: MutableState<Boolean>,
+    onExecute: (Int) -> Unit
 ) {
-    val day = remember { mutableStateOf(date.value.day.value) }
-    val month = remember { mutableStateOf(date.value.month.value) }
-    val year = remember { mutableStateOf(date.value.year.value) }
+    val days = remember { mutableStateOf(1) }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row {
-            DateNumberSelectorUI("Days", 30000000, day)
-        }
+        DateNumberSelectorUI("Days to execute order",days)
         ExecuteOrCancelOrderUI(
             expanded,
             sharesCount,
-            onExecute = { onExecute(listOf(day.value, month.value, year.value)) }
+            onExecute = { onExecute(days.value) }
         )
+        Text(text = "Repeat order")
+        Switch(checked = repeatOrder.value, onCheckedChange = {repeatOrder.value = it})
     }
 }
 
 @Composable
 fun DateNumberSelectorUI(
     name: String,
-    limit: Int?,
     mutableInt: MutableState<Int>
 ) {
-    Text(text = "Days to execute order")
-    Row(
-        modifier = Modifier
-            .border(1.dp,MaterialTheme.colorScheme.primary),
-        horizontalArrangement = Arrangement.Center
+    Column(
+        modifier = Modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-       Button(onClick = { if (mutableInt.value > 5) mutableInt.value -= 5 }
-       ) {
-           Text(text = "-5")
-       }
-        Button(onClick = { if (mutableInt.value > 0) mutableInt.value -= 1}) {
-            Text(text = "-1")
-        }
+        Text(text = name)
         Text(text = mutableInt.value.toString())
-        Button(onClick = { mutableInt.value++}) {
-            Text(text = "+1")
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = {
+                if (mutableInt.value > 5) mutableInt.value -= 5 else mutableInt.value = 0
+            }
+            ) {
+                Text(text = "-5")
+            }
+            Button(onClick = { if (mutableInt.value > 0) mutableInt.value -= 1 }) {
+                Text(text = "-1")
+            }
+            Button(onClick = { mutableInt.value++ }) {
+                Text(text = "+1")
+            }
+            Button(onClick = { mutableInt.value += 5 }) {
+                Text(text = "+5")
+            }
         }
-        Button(onClick = { mutableInt.value += 5}) {
-            Text(text = "+5")
+        if (mutableInt.value != 0){
+            Button(onClick = { mutableInt.value = 0}) {
+                Text(text = "Reset")
+            }
         }
-        
-        
-        
     }
 }
 
@@ -800,9 +819,7 @@ fun ExecuteOrCancelOrderUI(
     sharesCount: MutableState<Int>,
     onExecute: () -> Unit
 ) {
-
     Row(
-
     ) {
         Button(onClick = {
             expanded.value = false
@@ -899,15 +916,15 @@ fun GainingOrLosingUI(
     if (sharesCount.value != 0) {
         Text(text = "Total ${totalForBuying(stock, sharesCount, format)}")
         if (!buying.value) {
-            val profitLoses = getProfitLosses(sharesCount, stock, format)
+            val profitLoses = getProfitLosses(sharesCount, stock)
             if (profitLoses.toDouble() >= 0) {
                 Text(
-                    text = "Gaining ${getProfitLosses(sharesCount, stock, format)}",
+                    text = "Gaining ${getProfitLosses(sharesCount, stock)}",
                     color = Color.Green
                 )
             } else {
                 Text(
-                    text = "Losing ${getProfitLosses(sharesCount, stock, format)}",
+                    text = "Losing ${getProfitLosses(sharesCount, stock)}",
                     color = Color.Red
                 )
             }
