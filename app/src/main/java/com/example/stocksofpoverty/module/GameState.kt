@@ -14,6 +14,7 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.getIInitialYearlySummary
 import com.example.stocksofpoverty.data.getInitialAchievements
 import com.example.stocksofpoverty.data.getInitialBanks
 import com.example.stocksofpoverty.data.getInitialDate
@@ -40,8 +41,8 @@ fun startNewGame(
     news: MutableState<List<News>>,
     logs: MutableState<List<Logs>>,
     yearlySummary: MutableState<List<YearlySummary>>,
+    orderForExecute: MutableState<List<MarketOrder>>,
     achievements: MutableState<Achievements>,
-    orderForExecute: MutableState<List<MarketOrder>>
 ) {
     player.value = getInitialPlayer()
     date.value = getInitialDate()
@@ -50,8 +51,9 @@ fun startNewGame(
     banks.value = getInitialBanks()
     news.value = getInitialNewsList()
     logs.value = getInitialLog()
-    achievements.value = getInitialAchievements()
+    yearlySummary.value = getIInitialYearlySummary()
     orderForExecute.value = getInitialMarketOrderList()
+    achievements.value = getInitialAchievements()
 
     GlobalScope.launch {
         saveSlot.value = getEmptySaveSlot(dataStore)
@@ -63,15 +65,13 @@ fun startNewGame(
             banks.value,
             news.value,
             logs.value,
-            yearlySummary.value.toList(),
-            perks.value.toList(),
-            achievements.value,
-            orderForExecute.value.toList()
-
+            yearlySummary.value,
+            perks.value,
+            orderForExecute.value,
+            achievements.value
         )
         saveGame(saveGame, dataStore, saveSlot.value)
         startGame.value = true
-        achievements.value = getInitialAchievements()
 
     }
 }

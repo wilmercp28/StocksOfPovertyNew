@@ -1,5 +1,6 @@
 package com.example.stocksofpoverty.module
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.example.stocksofpoverty.data.Date
@@ -7,7 +8,6 @@ import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
-import java.text.DecimalFormat
 
 fun executeMarketOrder(
     selectedOrder: MutableState<String>,
@@ -17,11 +17,11 @@ fun executeMarketOrder(
     date: MutableState<Date>,
     stock: Stock,
     player: MutableState<Player>,
-    format: DecimalFormat,
     popupList: MutableState<List<String>>,
     selectedType: MutableState<String> = mutableStateOf(""),
     repeatOrder: Boolean = false,
     daysForOrder: Int = 0,
+    percentageChange: Double = 0.0,
     ordersList: MutableState<List<MarketOrder>> = mutableStateOf(emptyList()),
 ) {
     when (selectedOrder.value) {
@@ -32,7 +32,6 @@ fun executeMarketOrder(
             logs,
             stock,
             player,
-            format,
         )
 
         "Limit Order" -> limitOrder(
@@ -42,12 +41,12 @@ fun executeMarketOrder(
             logs,
             stock,
             player,
-            format,
             daysForOrder,
             selectedType,
             ordersList,
             popupList,
-            repeatOrder
+            repeatOrder,
+            percentageChange
         )
     }
 }
@@ -58,8 +57,7 @@ fun marketOrder(
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
     stock: Stock,
-    player: MutableState<Player>,
-    format: DecimalFormat
+    player: MutableState<Player>
 ) {
     if (buying.value) {
         buyStock(stock, sharesCount, player, date, logs)
@@ -75,12 +73,12 @@ fun limitOrder(
     logs: MutableState<List<Logs>>,
     stock: Stock,
     player: MutableState<Player>,
-    format: DecimalFormat,
     daysForOrder: Int,
     selectedType: MutableState<String>,
     ordersList: MutableState<List<MarketOrder>>,
     popupList: MutableState<List<String>>,
-    repeatOrder: Boolean
+    repeatOrder: Boolean,
+    percentageChange: Double
 ) {
     when (selectedType.value) {
         "Date" -> dateOrders(
@@ -89,14 +87,53 @@ fun limitOrder(
             date,
             logs,
             stock,
-            format,
             daysForOrder,
             ordersList,
             selectedType,
             popupList,
             repeatOrder
         )
+
+        "Percentage Change" -> percentageChangeOrder(
+            buying,
+            sharesCount,
+            stock,
+            ordersList,
+            selectedType,
+            popupList,
+            percentageChange
+        )
     }
+}
+
+fun percentageChangeOrder(
+    buying: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    stock: Stock,
+    ordersList: MutableState<List<MarketOrder>>,
+    selectedType: MutableState<String>,
+    popupList: MutableState<List<String>>,
+    percentageChange: Double
+) {
+    if (sharesCount.value != 0) {
+        ordersList.value += MarketOrder(
+            stock = stock,
+            buying = buying.value,
+            shares = sharesCount.value,
+            isLimitOrder = true,
+            repeat = mutableStateOf(false),
+            showPopup = mutableStateOf(true),
+            typeOfOrder = selectedType.value,
+            percentageChange = percentageChange
+        )
+        Log.d("Order Created",ordersList.value.toString())
+        popupList.value += "Percentage change order created"
+
+    } else {
+        popupList.value += "Error, Shares cant be 0"
+    }
+
+
 }
 
 fun dateOrders(
@@ -105,14 +142,13 @@ fun dateOrders(
     date: MutableState<Date>,
     logs: MutableState<List<Logs>>,
     stock: Stock,
-    format: DecimalFormat,
     daysForOrder: Int,
     ordersList: MutableState<List<MarketOrder>>,
     selectedType: MutableState<String>,
     popupList: MutableState<List<String>>,
     repeatOrder: Boolean
 ) {
-    if (sharesCount.value == 0){
+    if (sharesCount.value == 0) {
         popupList.value += "Error, Shares cant be 0"
     } else {
         ordersList.value += MarketOrder(

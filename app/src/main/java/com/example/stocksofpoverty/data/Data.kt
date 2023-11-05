@@ -63,8 +63,8 @@ data class SaveGame(
     val logs: List<Logs>,
     val yearlySummary: List<YearlySummary>,
     val perk: List<Perk>,
-    val achievements: Achievements,
-    val ordersForExecute: List<MarketOrder>
+    val marketOrder: List<MarketOrder>,
+    val achievements: Achievements
 )
 
 data class Date(
@@ -101,12 +101,15 @@ data class Player(
     var tier: MutableState<Int>,
     var perkPoints: MutableState<Int>,
 )
+
 data class Achievements(
     var currentIndex: Int,
-    var advanceTierProfitRequirements: Pair<List<Double>, MutableState<Boolean>>,
-    var advanceTierBalanceRequirements: Pair<List<Double>, MutableState<Boolean>>
+    var advanceTierProfitRequirements: List<Double>,
+    val advanceTierProfitRequerimentsCompleted: MutableState<Boolean>,
+    var advanceTierBalanceRequirements: List<Double>,
+    val advanceTierBalanceRequirementsCompleted: MutableState<Boolean>
+)
 
-        )
 fun getInitialPlayer(): Player {
     return Player(
         "Player",
@@ -125,17 +128,14 @@ fun getInitialPlayer(): Player {
         mutableStateOf(0),
     )
 }
+
 fun getInitialAchievements(): Achievements {
     return Achievements(
         currentIndex = 0,
-        advanceTierBalanceRequirements = Pair(
-            listOf(10000.0, 30000.0, 60000.0, 0.0),
-            mutableStateOf(false)
-        ),
-        advanceTierProfitRequirements = Pair(
-            listOf(20000.0, 40000.0, 70000.0, 0.0),
-            mutableStateOf(false)
-        )
+        advanceTierBalanceRequirements = listOf(10000.0, 30000.0, 60000.0, 0.0),
+        advanceTierProfitRequirements = listOf(20000.0, 40000.0, 70000.0, 0.0),
+        advanceTierBalanceRequirementsCompleted =  mutableStateOf(false),
+        advanceTierProfitRequerimentsCompleted =  mutableStateOf(false)
     )
 }
 
@@ -226,7 +226,7 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Hidden\nBank Account",
             description = "Receive a one time sum of money for 10000",
-            append = listOf("one","time","10000"),
+            append = listOf("one", "time", "10000"),
             active = false,
             1,
             R.drawable.cashperk
@@ -234,7 +234,7 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Cash Back",
             description = "Get 1% cash back for all your stocks buys (Maximum 500)",
-            append = listOf("1%","cash","back","500"),
+            append = listOf("1%", "cash", "back", "500"),
             active = false,
             1,
             R.drawable.cashbackperk
@@ -242,7 +242,7 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Super overdraft",
             description = "Can go until -20000 without going bankrupt, but has to pay 4% on late fees monthly",
-            append = listOf("-20000","bankrupt","10%","fees","monthly"),
+            append = listOf("-20000", "bankrupt", "10%", "fees", "monthly"),
             active = false,
             1,
             R.drawable.card
@@ -258,7 +258,7 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Part time\njob",
             description = "Work a part time job, get $100 monthly",
-            append = listOf("$100","monthly"),
+            append = listOf("$100", "monthly"),
             active = false,
             2,
             R.drawable.parttimejobperk
@@ -274,7 +274,7 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Dividends",
             description = "For each 100 shares, you receive dividends for 0.05% of the stock price",
-            append = listOf("100","shares","dividends","0.05","price"),
+            append = listOf("100", "shares", "dividends", "0.05", "price"),
             active = false,
             3,
             R.drawable.ratedown
@@ -282,14 +282,14 @@ fun getInitialPerks(): List<Perk> {
         Perk(
             name = "Gift from a stranger",
             description = "An unknown person send you some shares, 100 to be precise, from 3 different stocks (From a random stock)",
-            append = listOf("100","random","3","random"),
+            append = listOf("100", "random", "3", "random"),
             active = false,
             3,
             R.drawable.anonymity
         ), Perk(
             name = "empty",
             description = "For each 100 shares, you receive dividends for 0.05% of the stock price",
-            append = listOf("100","shares","dividends","0.05","price"),
+            append = listOf("100", "shares", "dividends", "0.05", "price"),
             active = false,
             3,
             R.drawable.ratedown
@@ -322,7 +322,8 @@ data class MarketOrder(
     var showPopup: MutableState<Boolean> = mutableStateOf(true),
     val typeOfOrder: String = "",
     val initialDaysToExecute: Int = 0,
-    var daysToExecute: MutableState<Int> = mutableStateOf(0)
+    var daysToExecute: MutableState<Int> = mutableStateOf(0),
+    val percentageChange: Double = 0.0
 )
 
 fun getInitialMarketOrderList(

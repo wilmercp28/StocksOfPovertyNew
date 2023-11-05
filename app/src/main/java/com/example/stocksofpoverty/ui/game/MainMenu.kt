@@ -144,7 +144,8 @@ fun MainMenu(dataStore: DataStore<Preferences>) {
                 news,
                 achievements,
                 gameLost,
-                orderForExecute
+                orderForExecute,
+                perks
             )
         }
     }
@@ -351,8 +352,8 @@ fun MainMenuUI(
                             news,
                             logs,
                             yearlySummary,
-                            achievements,
-                            orderForExecute
+                            orderForExecute,
+                            achievements
                         )
                     }) {
                         Text(text = "Confirm")

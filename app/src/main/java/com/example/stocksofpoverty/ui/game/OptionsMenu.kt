@@ -61,8 +61,8 @@ fun OptionsMenu(
                     logs.value,
                     yearlySummary.value,
                     perks.value,
-                    achievements.value,
-                    orderForExecute.value.toList()
+                    orderForExecute.value,
+                    achievements.value
                 )
                 coroutine.launch {
                     if (!paused.value) paused.value = true

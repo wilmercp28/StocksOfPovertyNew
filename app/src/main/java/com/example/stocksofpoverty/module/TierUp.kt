@@ -21,13 +21,13 @@ fun tierCompleted(
 }
 
 fun checkAllAchievements(achievements: MutableState<Achievements>): Boolean {
-    val profitRequirements = achievements.value.advanceTierProfitRequirements.second.value
-    val balanceRequirements = achievements.value.advanceTierBalanceRequirements.second.value
+    val profitRequirements = achievements.value.advanceTierProfitRequerimentsCompleted.value
+    val balanceRequirements = achievements.value.advanceTierBalanceRequirementsCompleted.value
 
     return profitRequirements && balanceRequirements
 }
 
 fun allAchievementsFalse(achievements: MutableState<Achievements>) {
-    achievements.value.advanceTierBalanceRequirements.second.value = false
-    achievements.value.advanceTierProfitRequirements.second.value = false
+    achievements.value.advanceTierProfitRequerimentsCompleted.value = false
+    achievements.value.advanceTierBalanceRequirementsCompleted.value = false
 }

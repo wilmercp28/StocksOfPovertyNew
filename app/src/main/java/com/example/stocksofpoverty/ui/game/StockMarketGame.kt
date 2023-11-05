@@ -67,6 +67,7 @@ import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.formatMoneyValue
 import com.example.stocksofpoverty.module.Update
 import com.example.stocksofpoverty.module.executeMarketOrder
 import com.example.stocksofpoverty.module.getProfitLosses
@@ -130,8 +131,8 @@ fun StockMarketGame(
                             logs.value.toList(),
                             yearlySummary.value.toList(),
                             perks.value.toList(),
-                            achievements.value,
-                            orderForExecute.value.toList()
+                            orderForExecute.value.toList(),
+                            achievements.value
                         ),
                         dataStore,
                         saveSlot.value
@@ -681,7 +682,6 @@ fun MarketOrderUI(
                             date,
                             stock,
                             player,
-                            format,
                             popupList,
                         )
                     }
@@ -718,7 +718,6 @@ fun MarketOrderUI(
                             date,
                             stock,
                             player,
-                            format,
                             popupList,
                             selectedType,
                             repeatOrder.value,
@@ -726,10 +725,49 @@ fun MarketOrderUI(
                             ordersList = orderForExecute
                         )
                     }
+
+                    "Percentage Change" -> MarketOrderPercentageChangeUI(
+                        expanded,
+                        sharesCount,
+                        repeatOrder
+                    ) { percentageChange ->
+                        executeMarketOrder(
+                            selectedOrder,
+                            buying,
+                            sharesCount,
+                            logs,
+                            date,
+                            stock,
+                            player,
+                            popupList,
+                            selectedType,
+                            false,
+                            percentageChange = percentageChange,
+                            ordersList = orderForExecute
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun MarketOrderPercentageChangeUI(
+    expanded: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    repeatOrder: MutableState<Boolean>,
+    onExecute: (Double) -> Unit
+) {
+    val percentage = remember { mutableStateOf(0.00) }
+    NumberSelectorDoubleUi("Percentage", percentage)
+    ExecuteOrCancelOrderUI(
+        expanded,
+        sharesCount,
+        onExecute = { onExecute(percentage.value) }
+    )
+
+
 }
 
 @Composable
@@ -743,19 +781,82 @@ fun DateSelectorUI(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        DateNumberSelectorUI("Days to execute order",days)
+        NumberSelectorIntUI("Days to execute order", days)
         ExecuteOrCancelOrderUI(
             expanded,
             sharesCount,
             onExecute = { onExecute(days.value) }
         )
         Text(text = "Repeat order")
-        Switch(checked = repeatOrder.value, onCheckedChange = {repeatOrder.value = it})
+        Switch(checked = repeatOrder.value, onCheckedChange = { repeatOrder.value = it })
     }
 }
 
 @Composable
-fun DateNumberSelectorUI(
+fun NumberSelectorDoubleUi(
+    name: String,
+    mutableDouble: MutableState<Double>
+) {
+    Column(
+        modifier = Modifier
+            .padding(20.dp)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = name)
+        Text(text = mutableDouble.value.toString())
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = {
+                mutableDouble.value = formatMoneyValue(mutableDouble.value + 0.20).toDouble()
+            }) {
+                Text(text = "+0.20")
+            }
+            Button(onClick = {
+                mutableDouble.value = formatMoneyValue(mutableDouble.value + 1).toDouble()
+            }) {
+                Text(text = "+1")
+            }
+            Button(onClick = {
+                mutableDouble.value = formatMoneyValue(mutableDouble.value + 5).toDouble()
+            }) {
+                Text(text = "+5")
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = {
+                if (mutableDouble.value > 0) mutableDouble.value =
+                    formatMoneyValue(mutableDouble.value - 0.20).toDouble()
+            }) {
+                Text(text = "-0.20")
+            }
+            Button(onClick = {
+                if (mutableDouble.value > 0) mutableDouble.value =
+                    formatMoneyValue(mutableDouble.value - 1).toDouble()
+            }) {
+                Text(text = "-1")
+            }
+            Button(onClick = {
+                if (mutableDouble.value > 5) mutableDouble.value =
+                    formatMoneyValue(mutableDouble.value - 5).toDouble()
+            }
+            ) {
+                Text(text = "-5")
+            }
+        }
+        if (mutableDouble.value != 0.0) {
+            Button(onClick = { mutableDouble.value = 0.0 }) {
+                Text(text = "Reset")
+            }
+        }
+    }
+}
+
+@Composable
+fun NumberSelectorIntUI(
     name: String,
     mutableInt: MutableState<Int>
 ) {
@@ -784,8 +885,8 @@ fun DateNumberSelectorUI(
                 Text(text = "+5")
             }
         }
-        if (mutableInt.value != 0){
-            Button(onClick = { mutableInt.value = 0}) {
+        if (mutableInt.value != 0) {
+            Button(onClick = { mutableInt.value = 0 }) {
                 Text(text = "Reset")
             }
         }

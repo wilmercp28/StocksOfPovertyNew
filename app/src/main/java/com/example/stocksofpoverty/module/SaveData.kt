@@ -12,6 +12,7 @@ import com.example.stocksofpoverty.data.Date
 import com.example.stocksofpoverty.data.Logs
 import com.example.stocksofpoverty.data.MarketOrder
 import com.example.stocksofpoverty.data.News
+import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.SaveGame
 import com.example.stocksofpoverty.data.Stock
@@ -94,6 +95,7 @@ fun loadSave(
     achievements: MutableState<Achievements>,
     gameLost: MutableState<Boolean>,
     orderForExecute: MutableState<List<MarketOrder>>,
+    perks: MutableState<List<Perk>>,
 ) {
     stocks.value = saveGame.stock
     player.value = saveGame.player
@@ -102,8 +104,7 @@ fun loadSave(
     logs.value = saveGame.logs
     banks.value = saveGame.bank
     news.value = saveGame.news
-    achievements.value = saveGame.achievements
-    orderForExecute.value = saveGame.ordersForExecute
+    perks.value = saveGame.perk
     loadingGame.value = false
     startGame.value = true
 }

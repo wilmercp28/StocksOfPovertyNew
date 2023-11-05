@@ -102,15 +102,15 @@ fun PlayerUI(
                 ProgressIndicatorLinear(
                     "Balance",
                     player.value.balance.value,
-                    achievements.value.advanceTierBalanceRequirements.first,
-                    achievements.value.advanceTierBalanceRequirements.second,
+                    achievements.value.advanceTierBalanceRequirements,
+                    achievements.value.advanceTierBalanceRequirementsCompleted,
                     indexForGoals
                 )
                 ProgressIndicatorLinear(
                     "Profit",
                     player.value.totalProfit.value,
-                    achievements.value.advanceTierProfitRequirements.first,
-                    achievements.value.advanceTierProfitRequirements.second,
+                    achievements.value.advanceTierProfitRequirements,
+                    achievements.value.advanceTierProfitRequerimentsCompleted,
                     indexForGoals
                 )
             }

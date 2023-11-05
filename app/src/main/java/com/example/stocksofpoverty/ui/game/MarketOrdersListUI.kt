@@ -1,5 +1,6 @@
 package com.example.stocksofpoverty.ui.game
 
+import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
@@ -34,6 +35,7 @@ fun MarketOrdersListUI(orderForExecute: MutableState<List<MarketOrder>>) {
 
     LazyColumn(
         content = {
+            Log.d("Orders",orderForExecute.value.toString())
             items(orderForExecute.value.reversed(), key = { it.id }) { order ->
                 Box(
                     modifier = Modifier
@@ -42,13 +44,32 @@ fun MarketOrdersListUI(orderForExecute: MutableState<List<MarketOrder>>) {
                 {
                     when (order.typeOfOrder) {
                         "Date" -> ShowMarketOrderDateUI(order, orderForExecute)
+                        "Percentage Change" -> ShowMarketOrderPercentageChangeUI(order,orderForExecute)
                     }
                 }
             }
         }
     )
 }
-
+@Composable
+fun ShowMarketOrderPercentageChangeUI(order: MarketOrder, orderForExecute: MutableState<List<MarketOrder>>) {
+    Log.d("Order",order.typeOfOrder)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Percentage Change Order", fontSize = 20.sp)
+        Text(text = order.stock.name, fontSize = 20.sp)
+        Divider()
+        Text(text = "At ${order.percentageChange}%")
+        if (order.buying) Text(text = " Buying ${order.shares} Shares") else Text(text = " Selling ${order.shares} Shares")
+        MarketOrderOptions(order, orderForExecute)
+    }
+}
 @Composable
 fun ShowMarketOrderDateUI(order: MarketOrder, orderForExecute: MutableState<List<MarketOrder>>) {
     Column(
