@@ -746,11 +746,53 @@ fun MarketOrderUI(
                             ordersList = orderForExecute
                         )
                     }
+
+                    "Price" -> MarketOrderPriceUI(
+                        expanded,
+                        sharesCount,
+                        repeatOrder,
+                        stock
+                    ) { price , higher ->
+                        executeMarketOrder(
+                            selectedOrder,
+                            buying,
+                            sharesCount,
+                            logs,
+                            date,
+                            stock,
+                            player,
+                            popupList,
+                            selectedType,
+                            false,
+                            priceToOrder = price,
+                            higher = higher,
+                            ordersList = orderForExecute
+                        )
+
+                    }
                 }
             }
         }
     }
 }
+
+
+@Composable
+fun MarketOrderPriceUI(
+    expanded: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    repeatOrder: MutableState<Boolean>,
+    stock: Stock,
+    onExecute: (Double, Boolean) -> Unit
+) {
+    val price = remember { mutableStateOf(0.0) }
+    val higher = remember { mutableStateOf(true) }
+    PriceSelectorUI(price,stock,higher)
+    ExecuteOrCancelOrderUI(expanded,sharesCount) {
+        onExecute(price.value,higher.value)
+    }
+}
+
 
 @Composable
 fun MarketOrderPercentageChangeUI(
@@ -768,6 +810,43 @@ fun MarketOrderPercentageChangeUI(
     )
 
 
+}
+
+@Composable
+fun PriceSelectorUI(price: MutableState<Double>, stock: Stock, higher: MutableState<Boolean>) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Price")
+        Text(text = price.value.toString())
+        Button(onClick = { higher.value = !higher.value }) {
+            Text(text = if (higher.value) "Or Higher" else "Or lower")
+        }
+        Row(
+
+        ) {
+            Button(onClick = { if (price.value >= 5) price.value -= 5 }) {
+                Text(text = "-5")
+            }
+            Button(onClick = { if (price.value > 1) price.value -= 1 }) {
+                Text(text = "-1")
+            }
+            Button(onClick = { price.value += 1 }) {
+                Text(text = "+1")
+            }
+            Button(onClick = { price.value += 5 }) {
+                Text(text = "+5")
+            }
+        }
+        Row() {
+            Button(onClick = { price.value = 0.0 }) {
+                Text(text = "Reset")
+            }
+            Button(onClick = { price.value = stock.price.value.toInt().toDouble() }) {
+                Text(text = "Current Price")
+            }
+        }
+    }
 }
 
 @Composable
@@ -801,10 +880,14 @@ fun NumberSelectorDoubleUi(
         modifier = Modifier
             .padding(20.dp)
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(text = name)
-        Text(text = mutableDouble.value.toString())
+        Text(
+            text = "${mutableDouble.value}%",
+            color = if (mutableDouble.value >= 0) Color.Green else Color.Red
+        )
         Row(
             horizontalArrangement = Arrangement.Center
         ) {
@@ -828,20 +911,17 @@ fun NumberSelectorDoubleUi(
             horizontalArrangement = Arrangement.Center
         ) {
             Button(onClick = {
-                if (mutableDouble.value > 0) mutableDouble.value =
-                    formatMoneyValue(mutableDouble.value - 0.20).toDouble()
+                mutableDouble.value = formatMoneyValue(mutableDouble.value - 0.20).toDouble()
             }) {
                 Text(text = "-0.20")
             }
             Button(onClick = {
-                if (mutableDouble.value > 0) mutableDouble.value =
-                    formatMoneyValue(mutableDouble.value - 1).toDouble()
+                mutableDouble.value = formatMoneyValue(mutableDouble.value - 1).toDouble()
             }) {
                 Text(text = "-1")
             }
             Button(onClick = {
-                if (mutableDouble.value > 5) mutableDouble.value =
-                    formatMoneyValue(mutableDouble.value - 5).toDouble()
+                mutableDouble.value = formatMoneyValue(mutableDouble.value - 5).toDouble()
             }
             ) {
                 Text(text = "-5")
@@ -921,6 +1001,8 @@ fun ExecuteOrCancelOrderUI(
     onExecute: () -> Unit
 ) {
     Row(
+        modifier = Modifier
+            .padding(10.dp)
     ) {
         Button(onClick = {
             expanded.value = false
@@ -951,8 +1033,10 @@ fun ShareCountsMenu(
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val currentTotal = remember(stock.price.value,sharesCount.value) { formatMoneyValue(stock.price.value * sharesCount.value) }
         Text(text = "Shares")
         Text(text = sharesCount.value.toString())
+        Text(text = "Current total $currentTotal")
         Row(
             modifier = Modifier
                 .fillMaxWidth(),

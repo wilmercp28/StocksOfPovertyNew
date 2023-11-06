@@ -22,6 +22,8 @@ fun executeMarketOrder(
     repeatOrder: Boolean = false,
     daysForOrder: Int = 0,
     percentageChange: Double = 0.0,
+    priceToOrder: Double = 0.0,
+    higher: Boolean = true,
     ordersList: MutableState<List<MarketOrder>> = mutableStateOf(emptyList()),
 ) {
     when (selectedOrder.value) {
@@ -46,7 +48,9 @@ fun executeMarketOrder(
             ordersList,
             popupList,
             repeatOrder,
-            percentageChange
+            percentageChange,
+            priceToOrder,
+            higher
         )
     }
 }
@@ -78,7 +82,9 @@ fun limitOrder(
     ordersList: MutableState<List<MarketOrder>>,
     popupList: MutableState<List<String>>,
     repeatOrder: Boolean,
-    percentageChange: Double
+    percentageChange: Double,
+    priceToOrder: Double,
+    higher: Boolean
 ) {
     when (selectedType.value) {
         "Date" -> dateOrders(
@@ -103,9 +109,47 @@ fun limitOrder(
             popupList,
             percentageChange
         )
+        "Price" -> priceOrder(
+            buying,
+            sharesCount,
+            stock,
+            ordersList,
+            selectedType,
+            popupList,
+            priceToOrder,
+            higher
+        )
     }
 }
 
+
+fun priceOrder(
+    buying: MutableState<Boolean>,
+    sharesCount: MutableState<Int>,
+    stock: Stock,
+    ordersList: MutableState<List<MarketOrder>>,
+    selectedType: MutableState<String>,
+    popupList: MutableState<List<String>>,
+    priceToOrder: Double,
+    higher: Boolean
+) {
+    if (sharesCount.value == 0){
+        popupList.value += "Error, Shares cant be 0"
+    } else {
+     ordersList.value += MarketOrder(
+         stock = stock,
+         buying = buying.value,
+         shares = sharesCount.value,
+         isLimitOrder = true,
+         repeat = mutableStateOf(false),
+         showPopup = mutableStateOf(true),
+         typeOfOrder = selectedType.value,
+         priceToOrder = priceToOrder,
+         higher = higher
+     )
+        popupList.value += "Price order created"
+    }
+}
 fun percentageChangeOrder(
     buying: MutableState<Boolean>,
     sharesCount: MutableState<Int>,

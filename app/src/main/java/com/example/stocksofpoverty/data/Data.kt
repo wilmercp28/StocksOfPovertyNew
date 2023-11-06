@@ -323,7 +323,9 @@ data class MarketOrder(
     val typeOfOrder: String = "",
     val initialDaysToExecute: Int = 0,
     var daysToExecute: MutableState<Int> = mutableStateOf(0),
-    val percentageChange: Double = 0.0
+    val percentageChange: Double = 0.0,
+    val priceToOrder: Double = 0.0,
+    val higher: Boolean = true
 )
 
 fun getInitialMarketOrderList(

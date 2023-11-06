@@ -45,11 +45,35 @@ fun MarketOrdersListUI(orderForExecute: MutableState<List<MarketOrder>>) {
                     when (order.typeOfOrder) {
                         "Date" -> ShowMarketOrderDateUI(order, orderForExecute)
                         "Percentage Change" -> ShowMarketOrderPercentageChangeUI(order,orderForExecute)
+                        "Price" -> ShowMarketOrderPriceUI(order,orderForExecute)
                     }
                 }
             }
         }
     )
+}
+
+@Composable
+fun ShowMarketOrderPriceUI(order: MarketOrder, orderForExecute: MutableState<List<MarketOrder>>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Price", fontSize = 20.sp)
+        Text(text = order.stock.name, fontSize = 20.sp)
+        Divider()
+        if (order.higher) {
+            Text(text = "At price ${order.priceToOrder} or higher")
+        } else {
+            Text(text = "At price ${order.priceToOrder} or lower")
+        }
+        if (order.buying) Text(text = " Buying ${order.shares} Shares") else Text(text = " Selling ${order.shares} Shares")
+        MarketOrderOptions(order, orderForExecute)
+    }
 }
 @Composable
 fun ShowMarketOrderPercentageChangeUI(order: MarketOrder, orderForExecute: MutableState<List<MarketOrder>>) {
