@@ -145,13 +145,18 @@ fun StockMarketGame(
         PopupUI(popupList)
     }
     if (gameLost.value) {
-        GameLostMenu()
+        GameLostMenu(player,gameLost,startGame,yearlySummary)
     } else {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
-                        Row {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             TopScreenIcons(
                                 "Market",
                                 selectedScreen,
@@ -178,12 +183,12 @@ fun StockMarketGame(
                                 R.drawable.logs
                             )
                             TopScreenIcons(
-                                "Options Menu",
+                                "Market Orders List",
                                 selectedScreen,
-                                R.drawable.menu
+                                R.drawable.stockorders
                             )
                             TopScreenIcons(
-                                "Market Orders List",
+                                "Options Menu",
                                 selectedScreen,
                                 R.drawable.menu
                             )

@@ -41,6 +41,7 @@ import com.example.stocksofpoverty.data.Perk
 import com.example.stocksofpoverty.data.Player
 import com.example.stocksofpoverty.data.Stock
 import com.example.stocksofpoverty.data.YearlySummary
+import com.example.stocksofpoverty.data.formatMoneyValue
 import com.example.stocksofpoverty.data.formatNumberToK
 import com.example.stocksofpoverty.module.activatePerk
 import com.example.stocksofpoverty.module.checkAllAchievements
@@ -188,7 +189,7 @@ fun PlayerUI(
                         item { ResumeUI(player, format, perks) }
                         if (yearlySummary.value.isNotEmpty()) {
                             items(yearlySummary.value.reversed()) {
-                                YearlySummaryUI(player, format, it)
+                                YearlySummaryUI(player,it)
                             }
                         }
                     }
@@ -358,7 +359,6 @@ fun ResumeUI(
 @Composable
 fun YearlySummaryUI(
     player: MutableState<Player>,
-    format: DecimalFormat,
     yearlySummary: YearlySummary,
 ) {
     Column(
@@ -366,17 +366,17 @@ fun YearlySummaryUI(
     ) {
         Text(text = yearlySummary.date)
         Divider()
-        Text(text = "IncomeTax ${format.format(yearlySummary.incomeTax)}")
+        Text(text = "IncomeTax ${formatMoneyValue(yearlySummary.incomeTax)}")
         if (player.value.yearProfit.value >= 0) {
             Text(
-                text = "Profit ${format.format(yearlySummary.profit)}",
+                text = "Profit ${formatMoneyValue(yearlySummary.profit)}",
                 color = Color.Green
             )
         } else {
-            Text(text = "Loses ${format.format(yearlySummary.profit)}", color = Color.Red)
+            Text(text = "Loses ${formatMoneyValue(yearlySummary.profit)}", color = Color.Red)
         }
-        Text(text = "Total Debt ${format.format(yearlySummary.debt)}")
-        Text(text = "Interest paid ${format.format(yearlySummary.interestPaid)}")
-        Text(text = "Total Spend ${format.format(player.value.yearlySpend.value)}")
+        Text(text = "Total Debt ${formatMoneyValue(yearlySummary.debt)}")
+        Text(text = "Interest paid ${formatMoneyValue(yearlySummary.interestPaid)}")
+        Text(text = "Total Spend ${formatMoneyValue(player.value.yearlySpend.value)}")
     }
 }
